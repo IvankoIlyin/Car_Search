@@ -5,9 +5,14 @@ import logging
 import difflib
 from car_obj import car_obj
 import time
-
+import math
 from parse_page_car import bs4_parse_car
 from selenium_parse import selenium_parse
+
+
+
+from twisted.internet import reactor
+
 
 # logging.getLogger("scrapy").propagate = False
 # logging.basicConfig(
@@ -79,27 +84,64 @@ def similarity_list_str(l1,l2):
                 l1_data+=str(i)
             for i in l2:
                 l2_data+=str(i)
-            if similarity(l1_data,l2_data)>=0.7 or l1_data in l2:
+            if similarity(l1_data,l2_data)>=0.7 or l1_data in l2 or l2_data in l1:
                 sim_flag = True
+
+            for i in l2:
+                if l1_data.find(i)!=-1:
+                    sim_flag=True
+
 
     return sim_flag
 
 def add_to_car_list(curr_car,search_car:car_obj.Car):
     if normalized_str(str(curr_car.title)).find(normalized_str((str(search_car.model)))) != -1 and normalized_str(str(curr_car.title)).find(normalized_str((str(search_car.mark)))) != -1:
+        print('title is good')
         if get_int_from_str(curr_car.price)>=get_int_from_str(search_car.price[0]) and get_int_from_str(curr_car.price)<=get_int_from_str(search_car.price[1]):
+            print("price is good")
             if get_int_from_str(curr_car.title)>=get_int_from_str(search_car.year[0]) and get_int_from_str(curr_car.title)<=get_int_from_str(search_car.year[1]):
                 curr_car_info = curr_car.information.all_info
                 search_car_info = search_car.characteristics.all_info
                 check_info = True
+                print("Checking char")
                 for i in range(len(curr_car_info)):
 
-                    if similarity_list_str(curr_car_info[i].value,search_car_info[i].value)!=True: check_info=False
+                    if similarity_list_str(curr_car_info[i].value,search_car_info[i].value)!=True:
+                        check_info=False
+                        print("Fuuuuck")
 
                 if check_info==True:
                     searched_car_list.append(curr_car)
 
+def split_string(s, n):
+    part_length = len(s) // n
+    remainder = len(s) % n
+    return [s[i * part_length + min(i, remainder):(i + 1) * part_length + min(i + 1, remainder)] for i in range(n)]
+def similarity_descr(curr,search):
+    percent=0
+    if curr!=None and search!=None:
+        if len(normalized_str(curr)) == len(normalized_str(search)):
+            percent=similarity(curr,search)
+
+
+        if len(normalized_str(curr))>len(normalized_str(search)):
+           list= split_string(curr,math.floor(len(curr)/len(search)))
+           for i in list:
+               percent+=similarity(search,i)
+
+        if len(normalized_str(search))>len(normalized_str(curr)):
+           list= split_string(curr,math.floor(len(search)/len(curr)))
+           for i in list:
+               percent+=similarity(curr,i)
+    return percent
 def sort_list_by_description(list,search_description):
-    None
+    n=len(list)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if similarity_descr(list[j].description,search_description)<similarity_descr(list[j+1].description,search_description):
+                list[j],list[j+1]=list[j+1],list[j]
+
+    return list
 
 
 #Spiders
@@ -109,8 +151,9 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
     not_allowed_keyword = ['/katalog','/book-new-auto','/newauto']
     check_ip_category = 0
     check_ip_article_links = 0
-    start_urls = ['https://automoto.ua/uk/']
     search_list: car_obj.Search_List
+    start_url =None
+    start_urls = [start_url]
     links =[]
 
 
@@ -217,10 +260,11 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
 class Car_autoria_Parse_Spider(scrapy.Spider):
     name = "autoriaSpider"
     allowed_domains = ["auto.ria.com"]
-    not_allowed_keyword = ['/katalog','/book-new-auto','/newauto']
+    not_allowed_keyword = []
     check_ip_category = 0
     check_ip_article_links = 0
-    start_urls = ['https://auto.ria.com/uk/car/used/']
+    start_url = None
+    start_urls = [start_url]
     search_list: car_obj.Search_List
     links =[]
 
@@ -322,14 +366,16 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
                 self.check_ip_category += 1
 
     def get_info(self,response):
-         curr_car = bs4_parse_car.autoria_parse_car_page(response.url)
-         add_to_car_list(curr_car,self.search_list)
+        print(response)
+        curr_car = bs4_parse_car.autoria_parse_car_page(response.url)
+        add_to_car_list(curr_car,self.search_list)
 
 #Run
 
-def star_automoto_parse(search_list):
+def start_automoto_parse(search_list):
     start_url = selenium_parse.selenium_parse_automoto(search_list)
     start_urls = [start_url]
+    print(start_urls, '\n')
     Car_automoto_Parse_Spider.start_urls = start_urls
     Car_automoto_Parse_Spider.search_list = search_list
     process = CrawlerProcess(settings={
@@ -344,10 +390,10 @@ def star_automoto_parse(search_list):
 
     process.stop()
     print(f"this is total time {time.time() - st}")
-    print(start_urls, '\n')
-def star_autoria_parse(search_list):
+
+def start_autoria_parse(search_list):
     start_url = selenium_parse.selenium_parse_autoria(search_list)
-    start_urls = ['https://auto.ria.com/uk/search/?categories.main.id=1&price.currency=1&price.USD.lte=3000&indexName=auto,order_auto,newauto_search&brand.id[0]=70&model.id[0]=652&size=20']
+    start_urls = [start_url]
     Car_autoria_Parse_Spider.start_urls = start_urls
     Car_autoria_Parse_Spider.search_list = search_list
     process = CrawlerProcess(settings={
@@ -366,30 +412,47 @@ def star_autoria_parse(search_list):
 
 #Run_All
 def start_parse_car_site(search_list):
-    star_autoria_parse(search_list)
-    star_automoto_parse(search_list)
+
+    process = CrawlerProcess(settings={
+        "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
+        'FEED_EXPORT_FIELDS': ["url", "desc"],
+        "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
+    })
+    start_url_automoto=selenium_parse.selenium_parse_automoto(search_list)
+    Car_automoto_Parse_Spider.start_urls = [start_url_automoto]
+    Car_automoto_Parse_Spider.search_list = search_list
+    process.crawl(Car_automoto_Parse_Spider)
+
+    start_url_autoria=selenium_parse.selenium_parse_autoria(search_list)
+    Car_autoria_Parse_Spider.start_urls = [start_url_autoria]
+    Car_autoria_Parse_Spider.search_list = search_list
+    process.crawl(Car_autoria_Parse_Spider)
+
+    process.start()
+
+
+    sort_list_by_description(searched_car_list,search_list.dedescription)
     return searched_car_list
 
 
 
 car_char=car_obj.Car_Characteristics()
 car_char.add_attr("Тип палива","Дизель")
-#car_char.add_attr("Тип палива","Бензин")
-#car_char.add_attr("Коробка","Механіка")
-#car_char.add_attr("Тип кузова","Седан")
-#car_char.add_attr("Привід","Передній")
-#car_char.add_attr("Колір","Білий")
-#car_char.add_attr("Колір","Чорний")
-#car_char.add_attr("Пробіг","300000")
-#car_char.add_attr("Двигун","2")
-car=car_obj.Car("skoda ","octavia",["0","3000"],["1990","2015"],car_char)
+car_char.add_attr("Тип палива","Бензин")
+car_char.add_attr("Коробка","Механіка")
+car_char.add_attr("Тип кузова","Хетчбек")
+car_char.add_attr("Тип кузова","Седан")
+car_char.add_attr("Тип кузова","Кросовер")
+car_char.add_attr("Привід","Передній")
+car_char.add_attr("Колір","Білий")
+car_char.add_attr("Колір","Чорний")
+car_char.add_attr("Пробіг","300000")
+car_char.add_attr("Двигун","2")
+car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2007"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
 
 
+start_parse_car_site(car)
 
-# start_parse_car_site(car)
-#
-#
-star_autoria_parse(car)
 for i in searched_car_list:
     print(i.link)
 

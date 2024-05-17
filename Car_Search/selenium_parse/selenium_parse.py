@@ -73,6 +73,13 @@ def selenium_parse_automoto(car:car_obj.Car):
             time.sleep(1)
             body_type.click()
     except:None
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
+        time.sleep(1)
+    except:
+        None
+
     #transmission
     try:
         more = driver.find_element(By.CSS_SELECTOR, '#collapseTransmission+ .collapsed')
@@ -86,6 +93,13 @@ def selenium_parse_automoto(car:car_obj.Car):
             time.sleep(1)
             transmission.click()
     except:None
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
+        time.sleep(1)
+    except:
+        None
+
     # engine_capacity
     try:
         for i in car.characteristics.engine_capacity.value:
@@ -94,6 +108,13 @@ def selenium_parse_automoto(car:car_obj.Car):
             time.sleep(1)
             engine_capacity.send_keys(str(i))
     except:None
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
+        time.sleep(1)
+    except:
+        None
+
     #drive_type
     try:
         for i in car.characteristics.drive_type.value:
@@ -104,6 +125,11 @@ def selenium_parse_automoto(car:car_obj.Car):
             drive_type.click()
     except:None
 
+    try:
+        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
+        time.sleep(1)
+    except:
+        None
 
     #mileage
     try:
@@ -113,6 +139,12 @@ def selenium_parse_automoto(car:car_obj.Car):
             time.sleep(1)
             mileage.send_keys(str(i))
     except: None
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
+        time.sleep(1)
+    except:
+        None
 
 
     # color
@@ -126,7 +158,11 @@ def selenium_parse_automoto(car:car_obj.Car):
             time.sleep(1)
     except:None
 
-
+    try:
+        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
+        time.sleep(1)
+    except:
+        None
 
 
     link=driver.current_url
@@ -141,10 +177,17 @@ def selenium_parse_avtobazar(car:car_obj.Car):
     # mark
 
 def selenium_parse_autoria(car:car_obj.Car):
-    driver = webdriver.Chrome()
+    chrome_options = webdriver.ChromeOptions()
+    prefs = {"profile.default_content_setting_values.notifications": 2}
+    chrome_options.add_experimental_option("prefs", prefs)
+    driver = webdriver.Chrome(options=chrome_options)
     link='https://auto.ria.com/uk/'
     driver.get(link)
-    time.sleep(3)
+    time.sleep(1)
+    try:
+        driver.find_element(By.CSS_SELECTOR,'.c-notifier-container.c-notifier-start label.js-close[onclick="setAllGdpr()"]').click()
+    except:
+        None
 
     # mark
     try:
@@ -219,25 +262,123 @@ def selenium_parse_autoria(car:car_obj.Car):
 
     # body type
     try:
-        #more = driver.find_element(By.CSS_SELECTOR, '#bodyBlock .bold')
-
         driver.execute_script("arguments[0].scrollIntoView(true);",
                               driver.find_element(By.CSS_SELECTOR, '#bodyBlock .bold'))
 
-        time.sleep(5)
+        time.sleep(3)
+
 
         clickable = driver.find_element(By.CSS_SELECTOR, '#bodyBlock .open')
         ActionChains(driver) \
             .click(clickable) \
             .perform()
-        time.sleep(5)
 
-        time.sleep(1)
+        time.sleep(3)
         for i in car.characteristics.body_type.value:
-            body_type = driver.find_element(By.CSS_SELECTOR,'.item-rows[title="Тип кузова"] label[title="'+i+'"]')
+            body_type = driver.find_element(By.XPATH,
+                                            './/*[contains(concat(" ",normalize-space(@class)," ")," item-rows ")][@title="Тип кузова"]//label[contains(normalize-space(),"'+i+'")]')
             driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
             time.sleep(1)
             body_type.click()
+    except:
+        None
+
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
+        time.sleep(1)
+    except:
+        None
+
+    # mileage
+    try:
+        for i in car.characteristics.mileage.value:
+            engine_capacity = driver.find_element(By.CSS_SELECTOR, 'input[name="mileage.lte')
+            driver.execute_script("arguments[0].scrollIntoView(true);", engine_capacity)
+            time.sleep(1)
+            engine_capacity.send_keys(str(i))
+    except:
+        None
+
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
+        time.sleep(1)
+    except:
+        None
+
+
+    # transmission
+    try:
+        driver.execute_script("arguments[0].scrollIntoView(true);",
+                              driver.find_element(By.CSS_SELECTOR, '#gearboxBlock .bold'))
+
+        time.sleep(1)
+
+        clickable = driver.find_element(By.CSS_SELECTOR, '#gearboxBlock .open')
+        ActionChains(driver) \
+            .click(clickable) \
+            .perform()
+
+        time.sleep(1)
+        for i in car.characteristics.transmission.value:
+            body_type = driver.find_element(By.XPATH,
+                                            './/*[contains(concat(" ",normalize-space(@class)," ")," item-rows ")][@title="Коробка передач"]//label[contains(normalize-space(),"'+i+'")]')
+            time.sleep(1)
+            driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
+            time.sleep(1)
+            body_type.click()
+            time.sleep(1)
+    except:
+        None
+
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
+        time.sleep(1)
+    except:
+        None
+
+    # engine_capacity
+    try:
+            for i in car.characteristics.engine_capacity.value:
+                engine_capacity = driver.find_element(By.CSS_SELECTOR, 'input[name="engine.lte')
+                driver.execute_script("arguments[0].scrollIntoView(true);", engine_capacity)
+                time.sleep(1)
+                engine_capacity.send_keys(str(i))
+    except:
+        None
+
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
+        time.sleep(1)
+    except:
+        None
+
+
+    # drive_type
+    try:
+        driver.execute_script("arguments[0].scrollIntoView(true);",
+                              driver.find_element(By.CSS_SELECTOR, '#driveBlock .bold'))
+
+        time.sleep(1)
+        for i in car.characteristics.drive_type.value:
+            body_type = driver.find_element(By.CSS_SELECTOR,
+                                            '.item-rows[title="Тип приводу"] label[title="' + i + '"]')
+            driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
+            time.sleep(1)
+            body_type.click()
+    except:
+        None
+
+
+
+
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
+        time.sleep(1)
     except:
         None
 
@@ -246,29 +387,17 @@ def selenium_parse_autoria(car:car_obj.Car):
 
     return link
 
-car_char=car_obj.Car_Characteristics()
-
-car_char.add_attr("Тип палива","Бензин")
-car_char.add_attr("Коробка","Автомат")
-car_char.add_attr("Коробка","Механіка")
-car_char.add_attr("Коробка","Варіатор")
-car_char.add_attr("Тип кузова","Седан")
-car_char.add_attr("Тип кузова","Пікап")
-car_char.add_attr("Тип кузова","Універсал")
-car_char.add_attr("Тип кузова","Хетчбек")
-car_char.add_attr("Тип кузова","Мінівен")
-car_char.add_attr("Тип кузова","Купе")
-car_char.add_attr("Тип кузова","Фургон")
-car_char.add_attr("Привід","Передній")
-car_char.add_attr("Колір","Чорний")
-car_char.add_attr("Колір","Білий")
-car_char.add_attr("Колір","Червоний")
-car_char.add_attr("Пробіг","300000л")
-car_char.add_attr("Двигун","1л")
-
-
-
-
-car=car_obj.Car("Audi","A4",["10000$","30000$"],["2010","2020"],car_char)
-
-print(selenium_parse_autoria(car))
+# car_char=car_obj.Car_Characteristics()
+# car_char.add_attr("Тип палива","Дизель")
+# car_char.add_attr("Тип палива","Бензин")
+# car_char.add_attr("Коробка","Механіка")
+# car_char.add_attr("Тип кузова","Седан")
+# car_char.add_attr("Привід","Передній")
+# car_char.add_attr("Колір","Білий")
+# car_char.add_attr("Колір","Чорний")
+# car_char.add_attr("Пробіг","300000")
+# car_char.add_attr("Двигун","2")
+# car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2007"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
+# car.characteristics.display_all_characteristics()
+#
+# print(selenium_parse_autoria(car))
