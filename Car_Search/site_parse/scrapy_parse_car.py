@@ -370,45 +370,121 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
         curr_car = bs4_parse_car.autoria_parse_car_page(response.url)
         add_to_car_list(curr_car,self.search_list)
 
-#Run
-
-def start_automoto_parse(search_list):
-    start_url = selenium_parse.selenium_parse_automoto(search_list)
+class Car_dexpens_Parse_Spider(scrapy.Spider):
+    name = "dexpensSpider"
+    allowed_domains = ["dexpens.com"]
+    not_allowed_keyword = []
+    check_ip_category = 0
+    check_ip_article_links = 0
+    start_url = None
     start_urls = [start_url]
-    print(start_urls, '\n')
-    Car_automoto_Parse_Spider.start_urls = start_urls
-    Car_automoto_Parse_Spider.search_list = search_list
-    process = CrawlerProcess(settings={
-        "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
-        'FEED_EXPORT_FIELDS': ["url", "desc"],
-        "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
-    })
+    search_list: car_obj.Search_List
+    links =[]
 
-    process.crawl(Car_automoto_Parse_Spider)
-    st = time.time()
-    process.start()
 
-    process.stop()
-    print(f"this is total time {time.time() - st}")
+    def start_requests(self):
+        for i in self.start_urls:
+            res = scrapy.Request(
+                i,
+                callback=self.parse,
+                dont_filter=True,
+                meta={"dont_retry": True, "download_timeout": timeout},
+                errback=handle_error,
+            )
+            yield res
 
-def start_autoria_parse(search_list):
-    start_url = selenium_parse.selenium_parse_autoria(search_list)
-    start_urls = [start_url]
-    Car_autoria_Parse_Spider.start_urls = start_urls
-    Car_autoria_Parse_Spider.search_list = search_list
-    process = CrawlerProcess(settings={
-        "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
-        'FEED_EXPORT_FIELDS': ["url", "desc"],
-        "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
-    })
+    def start_requests_ip(self, arg):
+        for i in self.start_urls:
+            res_ip = scrapy.Request(
+                i,
+                meta={"proxy": proxy, "dont_retry": True, "download_timeout": timeout},
+                callback=self.parse,
+                dont_filter=True,
+                errback=handle_error,
+            )
+            yield res_ip
 
-    process.crawl(Car_autoria_Parse_Spider)
-    st = time.time()
-    process.start()
+            logging.info(
+                {
+                    "proxy": "1",
+                    "clean_url": self.allowed_domains[0],
+                    "link": i,
+                }
+            )
 
-    process.stop()
-    print(f"this is total time {time.time() - st}")
-    print(start_urls, '\n')
+    def parse(self, response):
+        if str(response.status) == "200":
+            if response.css("body"):
+                data = response.css('#autoMarketTab a')
+                for link in data:
+                    try:
+                        if any(n in str(link.css("a").attrib["href"]) for n in self.not_allowed_keyword):
+                            pass
+                        else:
+                            if link.css("a").attrib["href"] not in self.links:
+                                if "https://" in str(link.css("a").attrib["href"]) or "http://" in str(link.css("a").attrib["href"]):
+                                    self.links.append(link.css("a").attrib["href"])
+                                    try:
+                                        yield scrapy.Request(
+                                            link.css("a").attrib["href"],
+                                            callback=self.get_info,
+                                            meta={"dont_retry": True, "download_timeout": cat_timeout,
+                                                  "base_url": response.url},
+                                            errback=handle_error,
+                                        )
+
+
+                                    except:
+                                        pass
+                                else:
+                                    self.links.append("https://www.dexpens.com" + link.css("a").attrib["href"])
+                                    try:
+                                        yield scrapy.Request(
+                                            "https://www.dexpens.com" + link.css("a").attrib["href"],
+                                            callback=self.get_info,
+                                            meta={"dont_retry": True, "download_timeout": cat_timeout,
+                                                  "base_url": response.url},
+                                            errback=handle_error,
+                                        )
+
+
+                                    except:
+                                        pass
+                    except:
+                        pass
+
+                if response.css('#bottom-nav .pagination-panel a:last-child'):
+                        next_page = response.css('.pagination-panel a:last-child').attrib['href']
+                        print(next_page)
+                        if 'http' in next_page:
+                            yield scrapy.Request(
+                                next_page,
+                                callback=self.parse,
+                                meta={"dont_retry": True, "download_timeout": cat_timeout, "base_url": response.url},
+                                errback=handle_error,
+                            )
+                        else:
+                            yield scrapy.Request(
+                                "https://www.dexpens.com" + next_page,
+                                callback=self.parse,
+                                meta={"dont_retry": True, "download_timeout": cat_timeout, "base_url": response.url},
+                                errback=handle_error,
+                            )
+
+
+
+        else:
+            while self.check_ip_category < 2:
+                yield response.follow(self.start_urls[0], callback=self.start_requests_ip)
+                self.check_ip_category += 1
+
+    def get_info(self,response):
+        curr_car = bs4_parse_car.dexpens_parse_car_page(response.url)
+        add_to_car_list(curr_car,self.search_list)
+
+
+
+
 
 #Run_All
 def start_parse_car_site(search_list):
@@ -428,6 +504,11 @@ def start_parse_car_site(search_list):
     Car_autoria_Parse_Spider.search_list = search_list
     process.crawl(Car_autoria_Parse_Spider)
 
+    start_url_dexpens = selenium_parse.selenium_parse_dexpens(search_list)
+    Car_autoria_Parse_Spider.start_urls = [start_url_dexpens]
+    Car_autoria_Parse_Spider.search_list = search_list
+    process.crawl(Car_autoria_Parse_Spider)
+
     process.start()
 
 
@@ -436,23 +517,32 @@ def start_parse_car_site(search_list):
 
 
 
-car_char=car_obj.Car_Characteristics()
-car_char.add_attr("Тип палива","Дизель")
-car_char.add_attr("Тип палива","Бензин")
-car_char.add_attr("Коробка","Механіка")
-car_char.add_attr("Тип кузова","Хетчбек")
-car_char.add_attr("Тип кузова","Седан")
-car_char.add_attr("Тип кузова","Кросовер")
-car_char.add_attr("Привід","Передній")
-car_char.add_attr("Колір","Білий")
-car_char.add_attr("Колір","Чорний")
-car_char.add_attr("Пробіг","300000")
-car_char.add_attr("Двигун","2")
-car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2007"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
+# car_char=car_obj.Car_Characteristics()
+# car_char.add_attr("Тип палива","Дизель")
+# car_char.add_attr("Тип палива","Бензин")
+# car_char.add_attr("Коробка","Механіка")
+# car_char.add_attr("Тип кузова","Хетчбек")
+# car_char.add_attr("Тип кузова","Седан")
+# car_char.add_attr("Тип кузова","Кросовер")
+# car_char.add_attr("Привід","Передній")
+# car_char.add_attr("Колір","Білий")
+# car_char.add_attr("Колір","Чорний")
+# car_char.add_attr("Пробіг","300000")
+# car_char.add_attr("Двигун","2")
+# car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2007"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
+#
+#
+# start_parse_car_site(car)
+#
+# for i in searched_car_list:
+#     print(i.link)
 
-
-start_parse_car_site(car)
-
-for i in searched_car_list:
-    print(i.link)
-
+# process = CrawlerProcess(settings={
+#         "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
+#         'FEED_EXPORT_FIELDS': ["url", "desc"],
+#         "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
+#     })
+#
+#
+# process.crawl(Car_dexpens_Parse_Spider)
+# process.start()

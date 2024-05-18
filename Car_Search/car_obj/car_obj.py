@@ -35,11 +35,11 @@ class Car_Characteristics:
                  body_type=None,color=None,seats=None,mileage=None,fuel_costs=None,location=None):
 
         self.salesman = Characteristic(["Продавець", "Оголошення від"],salesman)
-        self.transmission = Characteristic(["Коробка передач", "Коробка"],transmission)
+        self.transmission = Characteristic(["Коробка передач", "Коробка","КПП"],transmission)
         self.fuel_type = Characteristic(["Тип палива", "Паливо"],fuel_type)
         self.engine_capacity = Characteristic(["Двигун"],engine_capacity)
         self.drive_type = Characteristic(["Привід"],drive_type)
-        self.body_type = Characteristic(["Тип кузова"],body_type)
+        self.body_type = Characteristic(["Тип кузова","Кузов"],body_type)
         self.color = Characteristic(["Колір"],color)
         self.seats = Characteristic(["Місць в салоні","Кількість дверей"],seats)
         self.mileage = Characteristic(["Пробіг"],mileage)
@@ -59,7 +59,8 @@ class Car_Characteristics:
         for attr, value in self.__dict__.items():
             if isinstance(value, Characteristic):
                 if s1 in value.keys or self.check_value_in_list(value.keys,s1)==True and s2!='':
-                    value.value.append(s2)
+                    if s2 not in value.value:
+                        value.value.append(s2)
 
 
 

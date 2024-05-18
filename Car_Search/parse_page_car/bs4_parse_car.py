@@ -10,6 +10,8 @@ from car_obj import car_obj
 # )
 
 
+
+
 def automoto_parse_car_page(link)->car_obj.car_obj:
     # ### unique extractor
     url = link
@@ -60,65 +62,6 @@ def automoto_parse_car_page(link)->car_obj.car_obj:
     car = car_obj.car_obj(str(title),str(price),car_character,str(description),str(link))
 
     return car
-
-def avtobazar_parse_car_page(link)->car_obj.car_obj:
-    # ### unique extractor
-    url = link
-    response = requests.get(url)
-    print(response.status_code)
-    res = BeautifulSoup(response.content,'html.parser')
-
-
-    ## Title
-    try:
-        title = res.find('div',class_='_32c5u').text.strip()
-    except:
-        title = None
-
-    ## Price
-    try:
-        price = res.find('div',class_='_2izCF').text.strip()
-    except:
-        try:
-            price=res.find('span', attrs={'data-currency': 'usd'}).text.strip().replace('•','')
-        except:
-            price = None
-
-    ## description
-    try:
-        description = res.find('div', class_='_1d01p').text.strip()
-    except:
-        description = None
-
-    # information
-    try:
-        car_character = car_obj.Car_Characteristics()
-        information = ""
-        info_table = res.find_all('div', class_='heJ1W')
-        for i in info_table:
-            key=i.find('span',class_='_1hnlw').text.strip()
-            value=i.find('span',class_='_27p5n').text.strip()
-            if key=='Пробіг' and value=='новий':
-                value='0'
-            if key=='Двигун':
-                try:
-                    l=str(value).split('/')
-                    car_character.add_attr('Двигун',l[1].strip())
-                    car_character.add_attr('Паливо',l[0].strip())
-
-                except:car_character.add_attr(key,value)
-            else:
-                car_character.add_attr(key,value)
-
-
-
-    except:
-        information = None
-
-    car = car_obj.car_obj(str(title), str(price), car_character, str(description), str(link))
-
-    return car
-
 def autoria_parse_car_page(link)->car_obj.car_obj:
     # ### unique extractor
     url = link
@@ -179,9 +122,70 @@ def autoria_parse_car_page(link)->car_obj.car_obj:
     car = car_obj.car_obj(str(title), str(price), car_character, str(description), str(link))
 
     return car
+def dexpens_parse_car_page(link)->car_obj.car_obj:
+    # ### unique extractor
+    url = link
+    response = requests.get(url)
+    print(response.status_code)
+    res = BeautifulSoup(response.content,'html.parser')
 
 
-# car=autoria_parse_car_page('https://auto.ria.com/uk/auto_skoda_kodiaq_36549938.html')
+    ## Title
+    try:
+        title = res.find('h1',class_='car-name-sell').text.strip().replace(' ','')
+
+
+
+    except:
+        title = None
+
+    ## Price
+    try:
+        price = res.find('h2',class_='advertisement-price auto-pr').text.strip().replace(" ",'')
+        price=price.split('/')
+        price=price[0]
+    except:
+        price = None
+
+    ## description
+    try:
+        description = res.find('div', class_='other-description-car').text.strip()
+    except:
+        description = None
+
+    # information
+    try:
+        car_character = car_obj.Car_Characteristics()
+        charsc = res.select('.padding-bottom-12:not(i) div div span')[0].text.strip().replace(' ','').replace('\r\n',' ')
+        car_character.add_attr('Пробіг',charsc)
+
+        info_table_keys = res.select('.position-relative .row .col-md-4')
+        info_table_value = res.select('.position-relative .row .col-md-8')
+        for i in range(len(info_table_value)):
+            try:
+                key=info_table_keys[i].find('label').text.strip()
+                value=info_table_value[i].text.strip()
+            except:
+                continue
+            if key=='Двигун':
+                try:
+                    car_character.add_attr('Паливо',value)
+
+                except:car_character.add_attr(key,value)
+            else:
+                car_character.add_attr(key,value)
+
+    except:
+         None
+
+    car = car_obj.car_obj(str(title), str(price), car_character, str(description), str(link))
+
+    return car
+
+
+#https://automoto.ua/uk/Audi-A4-2012-Vinnitsa-62586646.html
+
+# car=dexpens_parse_car_page('https://www.dexpens.com/Automarket/Car/Citroen_C1_2011/10726')
 # print(car.title,'\n')
 # print(car.price,'\n')
 # print(car.description,'\n')

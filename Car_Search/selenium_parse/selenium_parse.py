@@ -169,13 +169,6 @@ def selenium_parse_automoto(car:car_obj.Car):
     driver.close()
 
     return link
-
-def selenium_parse_avtobazar(car:car_obj.Car):
-    driver = webdriver.Chrome()
-    driver.get('https://avtobazar.ua/uk/')
-    time.sleep(1)
-    # mark
-
 def selenium_parse_autoria(car:car_obj.Car):
     chrome_options = webdriver.ChromeOptions()
     prefs = {"profile.default_content_setting_values.notifications": 2}
@@ -372,16 +365,133 @@ def selenium_parse_autoria(car:car_obj.Car):
     except:
         None
 
-
-
-
-
     try:
         driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
         time.sleep(1)
     except:
         None
 
+    link = driver.current_url
+    driver.close()
+
+    return link
+def selenium_parse_dexpens(car:car_obj.Car):
+    chrome_options = webdriver.ChromeOptions()
+    prefs = {"profile.default_content_setting_values.notifications": 2}
+    chrome_options.add_experimental_option("prefs", prefs)
+    driver = webdriver.Chrome(options=chrome_options)
+    link='https://www.dexpens.com/Automarket'
+    driver.get(link)
+    time.sleep(3)
+
+    # mark
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#select2-Make_0-container').click()
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '.select2-search__field').send_keys(
+            car.mark)
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '.select2-results__option--highlighted').click()
+        time.sleep(1)
+    except:
+        None
+
+    # model
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#select2-Model_0-container').click()
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '.select2-search__field').send_keys(car.model)
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '.select2-results__option--highlighted').click()
+        time.sleep(1)
+    except:
+        None
+
+    # Year
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#select2-FromYear_0-container').click()
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '.select2-search__field').send_keys(car.year[0])
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '.select2-results__option--highlighted').click()
+        time.sleep(1)
+
+        driver.find_element(By.CSS_SELECTOR, '#select2-ToYear_0-container').click()
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '.select2-search__field').send_keys(car.year[1])
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '.select2-results__option--highlighted').click()
+        time.sleep(1)
+    except:
+        None
+
+    # Price
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#PriceFrom').click()
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '#PriceFrom').send_keys(car.price[0])
+        time.sleep(1)
+
+
+        driver.find_element(By.CSS_SELECTOR, '#PriceTo').click()
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, '#PriceTo').send_keys(car.price[1])
+        time.sleep(1)
+    except:
+        None
+
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#filterSearch').click()
+        time.sleep(1)
+    except:
+        None
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#filterCarSelling').click()
+        time.sleep(1)
+    except:
+        None
+
+    #Filter
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#advancedSearch').click()
+        time.sleep(1)
+    except:
+        None
+
+    #mileage
+    try:
+        mileage=driver.find_element(By.CSS_SELECTOR,'#MileageTo')
+        driver.execute_script("arguments[0].scrollIntoView(true);",mileage)
+        time.sleep(1)
+        ActionChains(driver) \
+            .click(mileage) \
+            .perform()
+        time.sleep(5)
+    except:
+        None
+
+    #transmission
+    try:
+        transmission=driver.find_element(By.CSS_SELECTOR,'#Transmission_chosen')
+        driver.execute_script("arguments[0].scrollIntoView(true);",transmission)
+        time.sleep(1)
+        cl=driver.find_element(By.CSS_SELECTOR,'#Transmission_chosen span')
+        ActionChains(driver) \
+            .click(cl) \
+            .perform()
+        time.sleep(5)
+    except:
+        None
+
+
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, '#filterSearch').click()
+        time.sleep(1)
+    except:
+        None
     link = driver.current_url
     driver.close()
 
@@ -395,9 +505,9 @@ def selenium_parse_autoria(car:car_obj.Car):
 # car_char.add_attr("Привід","Передній")
 # car_char.add_attr("Колір","Білий")
 # car_char.add_attr("Колір","Чорний")
-# car_char.add_attr("Пробіг","300000")
-# car_char.add_attr("Двигун","2")
-# car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2007"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
+# car_char.add_attr("Пробіг","300")
+# car_char.add_attr("Двигун","1л")
+# car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2020"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
 # car.characteristics.display_all_characteristics()
 #
-# print(selenium_parse_autoria(car))
+# print(selenium_parse_dexpens(car))

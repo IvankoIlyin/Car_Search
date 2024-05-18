@@ -13,8 +13,8 @@ car_char.add_attr("Привід","Передній")
 car_char.add_attr("Колір","Білий")
 car_char.add_attr("Колір","Чорний")
 car_char.add_attr("Пробіг","300")
-car_char.add_attr("Двигун","2")
-car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2007"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
+car_char.add_attr("Двигун","1")
+car=car_obj.Car("skoda","octavia",["3000","10000"],["2000","2020"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
 
 # Color: Red,Black
 
