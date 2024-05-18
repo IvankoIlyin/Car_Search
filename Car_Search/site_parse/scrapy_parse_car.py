@@ -51,7 +51,7 @@ def erase_alpha(s):
 
 def normalized_str(s):
     normalized = s.lower()
-    dict_symb=[' ','.',',','$','\n']
+    dict_symb=[' ','.',',','$','\n','\xa0']
     for i in dict_symb:
         normalized=normalized.replace(i,'')
     return normalized
@@ -119,7 +119,7 @@ def split_string(s, n):
     return [s[i * part_length + min(i, remainder):(i + 1) * part_length + min(i + 1, remainder)] for i in range(n)]
 def similarity_descr(curr,search):
     percent=0
-    if curr!=None and search!=None:
+    if (curr!=None and search!=None) and (curr!='' and search!='') and (len(curr)!=0 and len(search)!=0):
         if len(normalized_str(curr)) == len(normalized_str(search)):
             percent=similarity(curr,search)
 
@@ -505,9 +505,9 @@ def start_parse_car_site(search_list):
     process.crawl(Car_autoria_Parse_Spider)
 
     start_url_dexpens = selenium_parse.selenium_parse_dexpens(search_list)
-    Car_autoria_Parse_Spider.start_urls = [start_url_dexpens]
-    Car_autoria_Parse_Spider.search_list = search_list
-    process.crawl(Car_autoria_Parse_Spider)
+    Car_dexpens_Parse_Spider.start_urls = [start_url_dexpens]
+    Car_dexpens_Parse_Spider.search_list = search_list
+    process.crawl(Car_dexpens_Parse_Spider)
 
     process.start()
 
@@ -530,7 +530,7 @@ def start_parse_car_site(search_list):
 # car_char.add_attr("Пробіг","300000")
 # car_char.add_attr("Двигун","2")
 # car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2007"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
-#
+
 #
 # start_parse_car_site(car)
 #
@@ -543,6 +543,15 @@ def start_parse_car_site(search_list):
 #         "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
 #     })
 #
-#
+# start_url_dexpens = selenium_parse.selenium_parse_dexpens(car)
+# Car_dexpens_Parse_Spider.start_urls = [start_url_dexpens]
+# Car_dexpens_Parse_Spider.search_list = car
 # process.crawl(Car_dexpens_Parse_Spider)
 # process.start()
+#
+# for i in searched_car_list:
+#     print(i.link)
+
+# a=bs4_parse_car.dexpens_parse_car_page('https://www.dexpens.com/Automarket/Car/Skoda_Octavia_2007/10519')
+# b=normalized_str(a.price)
+# print(b)

@@ -441,49 +441,49 @@ def selenium_parse_dexpens(car:car_obj.Car):
         None
 
 
-    try:
-        driver.find_element(By.CSS_SELECTOR, '#filterSearch').click()
-        time.sleep(1)
-    except:
-        None
-
-    try:
-        driver.find_element(By.CSS_SELECTOR, '#filterCarSelling').click()
-        time.sleep(1)
-    except:
-        None
+    # try:
+    #     driver.find_element(By.CSS_SELECTOR, '#filterSearch').click()
+    #     time.sleep(1)
+    # except:
+    #     None
+    #
+    # try:
+    #     driver.find_element(By.CSS_SELECTOR, '#filterCarSelling').click()
+    #     time.sleep(1)
+    # except:
+    #     None
 
     #Filter
-    try:
-        driver.find_element(By.CSS_SELECTOR, '#advancedSearch').click()
-        time.sleep(1)
-    except:
-        None
+    # try:
+    #     driver.find_element(By.CSS_SELECTOR, '#advancedSearch').click()
+    #     time.sleep(1)
+    # except:
+    #     None
 
     #mileage
-    try:
-        mileage=driver.find_element(By.CSS_SELECTOR,'#MileageTo')
-        driver.execute_script("arguments[0].scrollIntoView(true);",mileage)
-        time.sleep(1)
-        ActionChains(driver) \
-            .click(mileage) \
-            .perform()
-        time.sleep(5)
-    except:
-        None
+    # try:
+    #     mileage=driver.find_element(By.CSS_SELECTOR,'#MileageTo')
+    #     driver.execute_script("arguments[0].scrollIntoView(true);",mileage)
+    #     time.sleep(1)
+    #     ActionChains(driver) \
+    #         .click(mileage) \
+    #         .perform()
+    #     time.sleep(5)
+    # except:
+    #     None
 
     #transmission
-    try:
-        transmission=driver.find_element(By.CSS_SELECTOR,'#Transmission_chosen')
-        driver.execute_script("arguments[0].scrollIntoView(true);",transmission)
-        time.sleep(1)
-        cl=driver.find_element(By.CSS_SELECTOR,'#Transmission_chosen span')
-        ActionChains(driver) \
-            .click(cl) \
-            .perform()
-        time.sleep(5)
-    except:
-        None
+    # try:
+    #     transmission=driver.find_element(By.CSS_SELECTOR,'#Transmission_chosen')
+    #     driver.execute_script("arguments[0].scrollIntoView(true);",transmission)
+    #     time.sleep(1)
+    #     cl=driver.find_element(By.CSS_SELECTOR,'#Transmission_chosen span')
+    #     ActionChains(driver) \
+    #         .click(cl) \
+    #         .perform()
+    #     time.sleep(5)
+    # except:
+    #     None
 
 
 
