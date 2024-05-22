@@ -1,7 +1,9 @@
 from site_parse import scrapy_parse_car
 from car_obj import car_obj
 import aiogram
-from aiogram import Bot,Dispatcher,types, executor
+import asyncio
+from aiogram import Bot, Dispatcher
+from handlers import questions
 
 
 # car_char=car_obj.Car_Characteristics()
@@ -17,20 +19,22 @@ from aiogram import Bot,Dispatcher,types, executor
 # car=car_obj.Car("skoda","octavia",["3000","10000"],["2000","2015"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
 #
 # # Color: Red,Black
-#
-# list=scrapy_parse_car.start_parse_car_site(car)
+# list = scrapy_parse_car.start_parse_car_site(car)
 #
 # for i in list:
 #     print(i.link)
 
-TOKEN_API='6522837095:AAGpGmy2TBwrXadFC-lApyqFkgUcS3SFOV0' #token for tg api
-bot = Bot(TOKEN_API)
-dp=Dispatcher(bot)
+
+async def main():
+    bot = Bot(token="6522837095:AAGpGmy2TBwrXadFC-lApyqFkgUcS3SFOV0")
+    dp = Dispatcher()
+
+    dp.include_router(questions.router)
+
+    # And the run events dispatching
+    await bot.delete_webhook(drop_pending_updates=True)
+    await dp.start_polling(bot)
 
 
-@dp.message_handler(commands=['start'])
-async def cmd_start(msg: types.Message)->None:
-    await msg.answer("Привіт")
-
-if __name__ == '__main__':
-    executor.start_polling(dp)
+if __name__ == "__main__":
+    asyncio.run(main())
