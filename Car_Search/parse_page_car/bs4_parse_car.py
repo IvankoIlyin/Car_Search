@@ -2,13 +2,17 @@ import logging
 from bs4 import BeautifulSoup
 import requests
 from car_obj import car_obj
+import re
+
 
 # logging.basicConfig(
 #     level='INFO',
 #     format='[%(levelname)-5s] %(asctime)s\t-\t%(message)s',
 #     datefmt='%d/%m/%Y %I:%M:%S %p'
 # )
-
+def extract_year(text):
+    years = re.findall(r'\b([1-9]\d{3})\b', text)
+    return years[-1] if years else None
 
 
 
@@ -25,6 +29,12 @@ def automoto_parse_car_page(link)->car_obj.car_obj:
         title = res.find('h1', class_='main-card-name').text.strip().replace("\xa0", " ")
     except:
         title = None
+
+    #Year
+    try:
+        year=extract_year(str(title))
+    except:
+        year=None
 
     ## description
     try:
@@ -59,7 +69,7 @@ def automoto_parse_car_page(link)->car_obj.car_obj:
         information = None
 
 
-    car = car_obj.car_obj(str(title),str(price),car_character,str(description),str(link))
+    car = car_obj.car_obj(str(title),str(price),year,car_character,str(description),str(link))
 
     return car
 def autoria_parse_car_page(link)->car_obj.car_obj:
@@ -75,6 +85,12 @@ def autoria_parse_car_page(link)->car_obj.car_obj:
         title = res.find('h1',class_='head').text.strip()
     except:
         title = None
+
+    # Year
+    try:
+        year = extract_year(str(title))
+    except:
+        year = None
 
     ## Price
     try:
@@ -119,7 +135,7 @@ def autoria_parse_car_page(link)->car_obj.car_obj:
     except:
          None
 
-    car = car_obj.car_obj(str(title), str(price), car_character, str(description), str(link))
+    car = car_obj.car_obj(str(title), str(price),year, car_character, str(description), str(link))
 
     return car
 def dexpens_parse_car_page(link)->car_obj.car_obj:
@@ -133,11 +149,14 @@ def dexpens_parse_car_page(link)->car_obj.car_obj:
     ## Title
     try:
         title = res.find('h1',class_='car-name-sell').text.strip().replace(' ','')
-
-
-
     except:
         title = None
+
+    # Year
+    try:
+        year = extract_year(str(title))
+    except:
+        year = None
 
     ## Price
     try:
@@ -178,15 +197,16 @@ def dexpens_parse_car_page(link)->car_obj.car_obj:
     except:
          None
 
-    car = car_obj.car_obj(str(title), str(price), car_character, str(description), str(link))
+    car = car_obj.car_obj(str(title), str(price),year, car_character, str(description), str(link))
 
     return car
 
 
 #https://automoto.ua/uk/Audi-A4-2012-Vinnitsa-62586646.html
-
-# car=dexpens_parse_car_page('https://www.dexpens.com/Automarket/Car/Citroen_C1_2011/10726')
+#
+# car=dexpens_parse_car_page('https://www.dexpens.com/Automarket/Car/Skoda_Octavia_2003/10738')
 # print(car.title,'\n')
 # print(car.price,'\n')
+# print(car.year,'\n')
 # print(car.description,'\n')
 # car.information.display_all_characteristics()

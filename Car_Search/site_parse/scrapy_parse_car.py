@@ -8,7 +8,7 @@ import time
 import math
 from parse_page_car import bs4_parse_car
 from selenium_parse import selenium_parse
-
+import re
 
 
 from twisted.internet import reactor
@@ -94,12 +94,48 @@ def similarity_list_str(l1,l2):
 
     return sim_flag
 
+def check_car_name(title, mark, model):
+    title=normalized_str(title).strip()
+
+    mark=normalized_str(mark).strip()
+    model=normalized_str(model).strip()
+
+    return mark in title and model in title
+def check_price(curr_car,search_car:car_obj.Car):
+    if search_car.price[0] == '' and search_car.price[1] == '':
+        return True
+
+    if search_car.price[0]=='' and get_int_from_str(curr_car.price) <= get_int_from_str(search_car.price[1]):
+        return True
+    if search_car.price[1]=='' and get_int_from_str(curr_car.price) >= get_int_from_str(search_car.price[0]):
+        return True
+    if search_car.price[0]!='' and search_car.price[1]!='' and get_int_from_str(curr_car.price) >= get_int_from_str(search_car.price[0]) and get_int_from_str(
+            curr_car.price) <= get_int_from_str(search_car.price[1]):
+        return True
+
+    return False
+
+def check_year(curr_car,search_car:car_obj.Car):
+    if search_car.year[0] == "" and search_car.year[1] == "":
+        return True
+
+    if search_car.year[0]=="" and get_int_from_str(curr_car.year) <= get_int_from_str(search_car.year[1]):
+        return True
+
+    if search_car.year[1]=="" and get_int_from_str(curr_car.year) >= get_int_from_str(search_car.year[0]):
+        return True
+
+    if search_car.year[0]!="" and search_car.year[1]!="" and get_int_from_str(curr_car.year) >= get_int_from_str(search_car.year[0]) and get_int_from_str(curr_car.year) <= get_int_from_str(search_car.year[1]):
+        return True
+
+    return False
+
 def add_to_car_list(curr_car,search_car:car_obj.Car):
-    if normalized_str(str(curr_car.title)).find(normalized_str((str(search_car.model)))) != -1 and normalized_str(str(curr_car.title)).find(normalized_str((str(search_car.mark)))) != -1:
+    if check_car_name(curr_car.title,search_car.mark,search_car.model)==True or similarity(curr_car.title,search_car.mark+search_car.model)>=0.6 :
         print('title is good')
-        if get_int_from_str(curr_car.price)>=get_int_from_str(search_car.price[0]) and get_int_from_str(curr_car.price)<=get_int_from_str(search_car.price[1]):
+        if check_price(curr_car,search_car)==True:
             print("price is good")
-            if get_int_from_str(curr_car.title)>=get_int_from_str(search_car.year[0]) and get_int_from_str(curr_car.title)<=get_int_from_str(search_car.year[1]):
+            if check_year(curr_car,search_car)==True:
                 curr_car_info = curr_car.information.all_info
                 search_car_info = search_car.characteristics.all_info
                 check_info = True
@@ -483,9 +519,6 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
         add_to_car_list(curr_car,self.search_list)
 
 
-
-
-
 #Run_All
 def start_parse_car_site(search_list):
 
@@ -494,20 +527,26 @@ def start_parse_car_site(search_list):
         'FEED_EXPORT_FIELDS': ["url", "desc"],
         "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
     })
-    start_url_automoto=selenium_parse.selenium_parse_automoto(search_list)
-    Car_automoto_Parse_Spider.start_urls = [start_url_automoto]
-    Car_automoto_Parse_Spider.search_list = search_list
-    process.crawl(Car_automoto_Parse_Spider)
 
-    start_url_autoria=selenium_parse.selenium_parse_autoria(search_list)
-    Car_autoria_Parse_Spider.start_urls = [start_url_autoria]
-    Car_autoria_Parse_Spider.search_list = search_list
-    process.crawl(Car_autoria_Parse_Spider)
+    try:
+        start_url_automoto=selenium_parse.selenium_parse_automoto(search_list)
+        Car_automoto_Parse_Spider.start_urls = [start_url_automoto]
+        Car_automoto_Parse_Spider.search_list = search_list
+        process.crawl(Car_automoto_Parse_Spider)
+    except:
+        None
 
-    start_url_dexpens = selenium_parse.selenium_parse_dexpens(search_list)
-    Car_dexpens_Parse_Spider.start_urls = [start_url_dexpens]
-    Car_dexpens_Parse_Spider.search_list = search_list
-    process.crawl(Car_dexpens_Parse_Spider)
+    try:
+        start_url_autoria=selenium_parse.selenium_parse_autoria(search_list)
+        Car_autoria_Parse_Spider.start_urls = [start_url_autoria]
+        Car_autoria_Parse_Spider.search_list = search_list
+        process.crawl(Car_autoria_Parse_Spider)
+    except:None
+
+    # start_url_dexpens = selenium_parse.selenium_parse_dexpens(search_list)
+    # Car_dexpens_Parse_Spider.start_urls = [start_url_dexpens]
+    # Car_dexpens_Parse_Spider.search_list = search_list
+    # process.crawl(Car_dexpens_Parse_Spider)
 
     process.start()
 
@@ -515,43 +554,34 @@ def start_parse_car_site(search_list):
     sort_list_by_description(searched_car_list,search_list.dedescription)
     return searched_car_list
 
-
-
-# car_char=car_obj.Car_Characteristics()
-# car_char.add_attr("Тип палива","Дизель")
-# car_char.add_attr("Тип палива","Бензин")
-# car_char.add_attr("Коробка","Механіка")
-# car_char.add_attr("Тип кузова","Хетчбек")
-# car_char.add_attr("Тип кузова","Седан")
-# car_char.add_attr("Тип кузова","Кросовер")
-# car_char.add_attr("Привід","Передній")
-# car_char.add_attr("Колір","Білий")
-# car_char.add_attr("Колір","Чорний")
-# car_char.add_attr("Пробіг","300000")
-# car_char.add_attr("Двигун","2")
-# car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2007"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
-
+# char=car_obj.Car_Characteristics()
+# char.add_attr("Оголошення від","Власник")
+# char.add_attr("Оголошення від","автодилер")
+# char.add_attr("Коробка","Механіка")
+# char.add_attr("Коробка","Автомат")
+# char.add_attr("Паливо","Бензин")
+# char.add_attr("Паливо","Дизель")
+# char.add_attr("Двигун","2")
+# char.add_attr("Кузов","Седан")
+# char.add_attr("Кузов","Купе")
+# char.add_attr("Колір","Чорний")
+# char.add_attr("Колір","Білий")
+# char.add_attr("Пробіг","300")
+# char.add_attr("Привід","Задній")
+# char.add_attr("Привід","Передній")
+# car=car_obj.Car("Audi","A",["10000",""],["2011",""],char,"Топ")
+# #
+# # char.display_all_characteristics()
+# #
+# # #start_parse_car_site(car)
+# curr=bs4_parse_car.automoto_parse_car_page('https://automoto.ua/uk/Audi-A1-2010-Lvov-55604978.html')
 #
-# start_parse_car_site(car)
-#
-# for i in searched_car_list:
-#     print(i.link)
-
-# process = CrawlerProcess(settings={
-#         "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
-#         'FEED_EXPORT_FIELDS': ["url", "desc"],
-#         "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
-#     })
-#
-# start_url_dexpens = selenium_parse.selenium_parse_dexpens(car)
-# Car_dexpens_Parse_Spider.start_urls = [start_url_dexpens]
-# Car_dexpens_Parse_Spider.search_list = car
-# process.crawl(Car_dexpens_Parse_Spider)
-# process.start()
+# add_to_car_list(curr,car)
 #
 # for i in searched_car_list:
 #     print(i.link)
 
-# a=bs4_parse_car.dexpens_parse_car_page('https://www.dexpens.com/Automarket/Car/Skoda_Octavia_2007/10519')
-# b=normalized_str(a.price)
-# print(b)
+
+
+
+

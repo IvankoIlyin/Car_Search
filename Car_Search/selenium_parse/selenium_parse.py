@@ -10,7 +10,10 @@ from car_obj import car_obj
 
 def selenium_parse_automoto(car:car_obj.Car):
 
-    driver = webdriver.Chrome()
+    options=webdriver.ChromeOptions()
+    #options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
+    driver = webdriver.Chrome(options=options)
     link='https://automoto.ua/uk/'
     driver.get(link)
     time.sleep(1)
@@ -502,6 +505,8 @@ def selenium_parse_dexpens(car:car_obj.Car):
 # car_char.add_attr("Тип палива","Бензин")
 # car_char.add_attr("Коробка","Механіка")
 # car_char.add_attr("Тип кузова","Седан")
+# car_char.add_attr("Тип кузова","Купе")
+# car_char.add_attr("Тип кузова","Кросовер")
 # car_char.add_attr("Привід","Передній")
 # car_char.add_attr("Колір","Білий")
 # car_char.add_attr("Колір","Чорний")
@@ -510,4 +515,4 @@ def selenium_parse_dexpens(car:car_obj.Car):
 # car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2020"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
 # car.characteristics.display_all_characteristics()
 #
-# print(selenium_parse_dexpens(car))
+# print(selenium_parse_automoto(car))

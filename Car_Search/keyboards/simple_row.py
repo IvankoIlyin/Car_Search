@@ -7,6 +7,5 @@ def make_row_keyboard(items: list[str]) -> ReplyKeyboardMarkup:
     :param items: список текстів для кнопок
     :return: об'єкт реплай-клавіатури
     """
-    row = [KeyboardButton(text=item) for item in items]
-    return ReplyKeyboardMarkup(keyboard=[row], resize_keyboard=True)
-
+    keyboard = [[KeyboardButton(text=item)] for item in items]
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)

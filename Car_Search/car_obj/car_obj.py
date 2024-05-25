@@ -1,8 +1,9 @@
 
 class car_obj:
-    def __init__(self,title=None,price=None,information=None,description=None,link=None):
+    def __init__(self,title=None,price=None,year=None,information=None,description=None,link=None):
         self.title=title
         self.price=price
+        self.year=year
         self.information=information
         self.description=description
         self.link=link
@@ -25,6 +26,8 @@ class Car:
         self.characteristics=characteristic
         self.dedescription=dedescription
 
+
+
 class Characteristic:
     def __init__(self, keys: list[str], value: list[str] = None):
         self.keys = keys
@@ -32,7 +35,7 @@ class Characteristic:
 
 class Car_Characteristics:
     def __init__(self,salesman=None,transmission=None,fuel_type=None,engine_capacity=None,drive_type=None,
-                 body_type=None,color=None,seats=None,mileage=None,fuel_costs=None,location=None):
+                 body_type=None,color=None,mileage=None):
 
         self.salesman = Characteristic(["Продавець", "Оголошення від"],salesman)
         self.transmission = Characteristic(["Коробка передач", "Коробка","КПП"],transmission)
@@ -41,12 +44,9 @@ class Car_Characteristics:
         self.drive_type = Characteristic(["Привід"],drive_type)
         self.body_type = Characteristic(["Тип кузова","Кузов"],body_type)
         self.color = Characteristic(["Колір"],color)
-        self.seats = Characteristic(["Місць в салоні","Кількість дверей"],seats)
         self.mileage = Characteristic(["Пробіг"],mileage)
-        self.fuel_costs = Characteristic(["Витрати пального"],fuel_costs)
-        self.location = Characteristic(["Місто"],location)
         self.all_info=[self.salesman,self.transmission,self.fuel_type,self.engine_capacity,self.drive_type,
-                       self.body_type,self.color,self.seats,self.mileage,self.fuel_costs,self.location]
+                       self.body_type,self.color,self.mileage]
 
 
 
@@ -58,11 +58,14 @@ class Car_Characteristics:
     def add_attr(self, s1: str, s2: str):
         for attr, value in self.__dict__.items():
             if isinstance(value, Characteristic):
-                if s1 in value.keys or self.check_value_in_list(value.keys,s1)==True and s2!='':
+                if s1 in value.keys or self.check_value_in_list(value.keys,s1)==True and s2!='' and s2!=None:
                     if s2 not in value.value:
                         value.value.append(s2)
 
-
+    def clear(self):
+        for attr, value in self.__dict__.items():
+            if isinstance(value, Characteristic):
+                value.value.clear()
 
 
     def display_all_characteristics(self):
