@@ -1,17 +1,24 @@
-
+import concurrent.futures
+from asyncio import wait_for
+from concurrent.futures import ThreadPoolExecutor
 import scrapy
-from scrapy.crawler import CrawlerProcess
+from scrapy.crawler import CrawlerProcess, CrawlerRunner
 import logging
 import difflib
 from car_obj import car_obj
-import time
 import math
 from parse_page_car import bs4_parse_car
 from selenium_parse import selenium_parse
-import re
+from scrapy.crawler import CrawlerRunner
+from twisted.internet import reactor, defer
+import asyncio
+from scrapy.crawler import CrawlerRunner
+from scrapy.utils.project import get_project_settings
+from scrapy.utils.log import configure_logging
+from crochet import setup, wait_for
 
-
-from twisted.internet import reactor
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 
 # logging.getLogger("scrapy").propagate = False
@@ -32,7 +39,7 @@ cat_timeout = 20
 def handle_error(failure):
     pass
 
-searched_car_list=[]
+
 
 
 #help method
@@ -130,7 +137,7 @@ def check_year(curr_car,search_car:car_obj.Car):
 
     return False
 
-def add_to_car_list(curr_car,search_car:car_obj.Car):
+def add_to_car_list(curr_car,search_car:car_obj.Car,searched_car_list):
     if check_car_name(curr_car.title,search_car.mark,search_car.model)==True or similarity(curr_car.title,search_car.mark+search_car.model)>=0.6 :
         print('title is good')
         if check_price(curr_car,search_car)==True:
@@ -179,7 +186,6 @@ def sort_list_by_description(list,search_description):
 
     return list
 
-
 #Spiders
 class Car_automoto_Parse_Spider(scrapy.Spider):
     name = "automotoSpider"
@@ -190,6 +196,7 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
     search_list: car_obj.Search_List
     start_url =None
     start_urls = [start_url]
+    searched_car_list=[]
     links =[]
 
 
@@ -291,7 +298,7 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
 
     def get_info(self,response):
          curr_car = bs4_parse_car.automoto_parse_car_page(response.url)
-         add_to_car_list(curr_car,self.search_list)
+         add_to_car_list(curr_car,self.search_list,self.searched_car_list)
 
 class Car_autoria_Parse_Spider(scrapy.Spider):
     name = "autoriaSpider"
@@ -520,43 +527,44 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
 
 
 #Run_All
-def start_parse_car_site(search_list):
-
-    process = CrawlerProcess(settings={
-        "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
-        'FEED_EXPORT_FIELDS': ["url", "desc"],
-        "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
-    })
-
-    try:
-        start_url_automoto=selenium_parse.selenium_parse_automoto(search_list)
-        Car_automoto_Parse_Spider.start_urls = [start_url_automoto]
-        Car_automoto_Parse_Spider.search_list = search_list
-        process.crawl(Car_automoto_Parse_Spider)
-    except:
-        None
-
-    try:
-        start_url_autoria=selenium_parse.selenium_parse_autoria(search_list)
-        Car_autoria_Parse_Spider.start_urls = [start_url_autoria]
-        Car_autoria_Parse_Spider.search_list = search_list
-        process.crawl(Car_autoria_Parse_Spider)
-    except:None
-
-    # start_url_dexpens = selenium_parse.selenium_parse_dexpens(search_list)
-    # Car_dexpens_Parse_Spider.start_urls = [start_url_dexpens]
-    # Car_dexpens_Parse_Spider.search_list = search_list
-    # process.crawl(Car_dexpens_Parse_Spider)
-
-    process.start()
-
-
-    sort_list_by_description(searched_car_list,search_list.dedescription)
-    return searched_car_list
+# def start_parse_car_site(search_list):
+#
+#         process = CrawlerProcess(settings={
+#             "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
+#             'FEED_EXPORT_FIELDS': ["url", "desc"],
+#             "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
+#         })
+#
+#         searched_car_list = []
+#         try:
+#             start_url_automoto=selenium_parse.selenium_parse_automoto(search_list)
+#             Car_automoto_Parse_Spider.start_urls = [start_url_automoto]
+#             Car_automoto_Parse_Spider.search_list = search_list
+#             Car_automoto_Parse_Spider.searched_car_list=searched_car_list
+#             process.crawl(Car_automoto_Parse_Spider)
+#         except:
+#             None
+#
+#         # try:
+#         #     start_url_autoria=selenium_parse.selenium_parse_autoria(search_list)
+#         #     Car_autoria_Parse_Spider.start_urls = [start_url_autoria]
+#         #     Car_autoria_Parse_Spider.search_list = search_list
+#         #     process.crawl(Car_autoria_Parse_Spider)
+#         # except:None
+#
+#         # start_url_dexpens = selenium_parse.selenium_parse_dexpens(search_list)
+#         # Car_dexpens_Parse_Spider.start_urls = [start_url_dexpens]
+#         # Car_dexpens_Parse_Spider.search_list = search_list
+#         # process.crawl(Car_dexpens_Parse_Spider)
+#
+#         process.start()
+#
+#         searched_car_list=Car_automoto_Parse_Spider.searched_car_list
+#         #sort_list_by_description(searched_car_list,search_list.dedescription)
+#
+#         return searched_car_list
 
 # char=car_obj.Car_Characteristics()
-# char.add_attr("Оголошення від","Власник")
-# char.add_attr("Оголошення від","автодилер")
 # char.add_attr("Коробка","Механіка")
 # char.add_attr("Коробка","Автомат")
 # char.add_attr("Паливо","Бензин")
@@ -569,19 +577,32 @@ def start_parse_car_site(search_list):
 # char.add_attr("Пробіг","300")
 # char.add_attr("Привід","Задній")
 # char.add_attr("Привід","Передній")
-# car=car_obj.Car("Audi","A",["10000",""],["2011",""],char,"Топ")
-# #
-# # char.display_all_characteristics()
-# #
-# # #start_parse_car_site(car)
-# curr=bs4_parse_car.automoto_parse_car_page('https://automoto.ua/uk/Audi-A1-2010-Lvov-55604978.html')
+# car=car_obj.Car("Skoda","Octavia",["3000","5000"],["2000","2010"],char,"Топ")
 #
-# add_to_car_list(curr,car)
+# char.display_all_characteristics()
+#
+# searched_car_list=start_parse_car_site(car)
+#
 #
 # for i in searched_car_list:
 #     print(i.link)
 
 
+def start_parse_car_site(search_list):
+    process = CrawlerProcess(settings={
+        "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
+        'FEED_EXPORT_FIELDS': ["url", "desc"],
+        "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
+    })
+
+    start_url_automoto = selenium_parse.selenium_parse_automoto(search_list)
+    Car_automoto_Parse_Spider.start_urls = [start_url_automoto]
+    Car_automoto_Parse_Spider.search_list = search_list
+
+    process.crawl(Car_automoto_Parse_Spider)
+    process.start()
+
+    return Car_automoto_Parse_Spider.searched_car_list
 
 
 

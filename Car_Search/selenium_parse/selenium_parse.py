@@ -1,5 +1,7 @@
 import time
-
+import tempfile
+import shutil
+from selenium import webdriver
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
@@ -7,11 +9,15 @@ from selenium.webdriver.common.by import By
 from car_obj import car_obj
 
 
+def cleanup_driver(driver, user_data_dir):
+    driver.quit()
+    shutil.rmtree(user_data_dir)  # Очистка временной директории
 
 def selenium_parse_automoto(car:car_obj.Car):
 
     options=webdriver.ChromeOptions()
-    #options.add_argument('--headless')
+    options.add_argument('--headless')
+    options.add_argument("window-size=1920x1080")
     options.add_argument('--disable-gpu')
     driver = webdriver.Chrome(options=options)
     link='https://automoto.ua/uk/'
@@ -512,7 +518,14 @@ def selenium_parse_dexpens(car:car_obj.Car):
 # car_char.add_attr("Колір","Чорний")
 # car_char.add_attr("Пробіг","300")
 # car_char.add_attr("Двигун","1л")
-# car=car_obj.Car("skoda","octavia",["3000","5000"],["2000","2020"],car_char,"Продам авто Skoda Oktavia a 5 машина в хорошому стані мотор працює добре коробка передач супер масла фільтра замінені")
+# char = car_obj.Car_Characteristics()
+# char.add_attr("Коробка", "Механіка")
+# char.add_attr("Двигун", "2")
+# char.add_attr("Кузов", "Седан")
+# char.add_attr("Колір", "Чорний")
+# char.add_attr("Пробіг", "300")
+# char.add_attr("Привід", "Передній")
+# car = car_obj.Car("Audi", "A4", ["3000", "7000"], ["2000", "2010"], char, "Топ")
 # car.characteristics.display_all_characteristics()
 #
 # print(selenium_parse_automoto(car))
