@@ -180,6 +180,9 @@ def selenium_parse_automoto(car:car_obj.Car):
     return link
 def selenium_parse_autoria(car:car_obj.Car):
     chrome_options = webdriver.ChromeOptions()
+    #chrome_options.add_argument('--headless')
+    chrome_options.add_argument("window-size=1920x1080")
+    chrome_options.add_argument('--disable-gpu')
     prefs = {"profile.default_content_setting_values.notifications": 2}
     chrome_options.add_experimental_option("prefs", prefs)
     driver = webdriver.Chrome(options=chrome_options)
@@ -219,15 +222,20 @@ def selenium_parse_autoria(car:car_obj.Car):
      # Year
     try:
             driver.find_element(By.CSS_SELECTOR, '.e-year ._grey').click()
-            time.sleep(1)
-            driver.find_element(By.CSS_SELECTOR, '#yearFrom').click()
-            time.sleep(1)
-            driver.find_element(By.CSS_SELECTOR, 'select#yearFrom option[value="' + car.year[0] + '"]').click()
-            time.sleep(1)
-            driver.find_element(By.CSS_SELECTOR, '#yearTo').click()
-            time.sleep(1)
-            driver.find_element(By.CSS_SELECTOR, 'select#yearTo option[value="' + car.year[1] + '"]').click()
-            time.sleep(1)
+            if car.year[0]!="":
+                time.sleep(1)
+                driver.find_element(By.CSS_SELECTOR, '#yearFrom').click()
+                time.sleep(1)
+                driver.find_element(By.CSS_SELECTOR, 'select#yearFrom option[value="' + car.year[0] + '"]').click()
+                time.sleep(1)
+            else:None
+            if car.year[1] != "":
+                driver.find_element(By.CSS_SELECTOR, '#yearTo').click()
+                time.sleep(1)
+                driver.find_element(By.CSS_SELECTOR, 'select#yearTo option[value="' + car.year[1] + '"]').click()
+                time.sleep(1)
+            else:
+                None
             clickable = driver.find_element(By.CSS_SELECTOR, '.popup-body')
             ActionChains(driver) \
                 .click(clickable) \
@@ -506,18 +514,7 @@ def selenium_parse_dexpens(car:car_obj.Car):
 
     return link
 
-# car_char=car_obj.Car_Characteristics()
-# car_char.add_attr("Тип палива","Дизель")
-# car_char.add_attr("Тип палива","Бензин")
-# car_char.add_attr("Коробка","Механіка")
-# car_char.add_attr("Тип кузова","Седан")
-# car_char.add_attr("Тип кузова","Купе")
-# car_char.add_attr("Тип кузова","Кросовер")
-# car_char.add_attr("Привід","Передній")
-# car_char.add_attr("Колір","Білий")
-# car_char.add_attr("Колір","Чорний")
-# car_char.add_attr("Пробіг","300")
-# car_char.add_attr("Двигун","1л")
+
 # char = car_obj.Car_Characteristics()
 # char.add_attr("Коробка", "Механіка")
 # char.add_attr("Двигун", "2")
@@ -525,7 +522,7 @@ def selenium_parse_dexpens(car:car_obj.Car):
 # char.add_attr("Колір", "Чорний")
 # char.add_attr("Пробіг", "300")
 # char.add_attr("Привід", "Передній")
-# car = car_obj.Car("Audi", "A4", ["3000", "7000"], ["2000", "2010"], char, "Топ")
+# car = car_obj.Car("Audi", "", ["", ""], ["", ""], char, "Топ")
 # car.characteristics.display_all_characteristics()
 #
-# print(selenium_parse_automoto(car))
+# print(selenium_parse_autoria(car))

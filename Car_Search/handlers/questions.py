@@ -372,7 +372,7 @@ async def searching(message: Message,state: FSMContext):
     )
 @router.message(Command("test1"))
 async def test(message: Message):
-    await message.answer(text="Погнали тест")
+    await message.answer(text="Погнали тест 1")
 
     char = car_obj.Car_Characteristics()
     char.add_attr("Коробка", "Механіка")
@@ -396,7 +396,7 @@ async def test(message: Message):
 
 @router.message(Command("test2"))
 async def test(message: Message):
-    await message.answer(text="Погнали тест")
+    await message.answer(text="Погнали тест 2")
 
     char = car_obj.Car_Characteristics()
     char.add_attr("Коробка", "Механіка")
