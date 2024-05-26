@@ -199,7 +199,6 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
     searched_car_list=[]
     links =[]
 
-
     def start_requests(self):
         for i in self.start_urls:
             res = scrapy.Request(
@@ -309,6 +308,7 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
     start_url = None
     start_urls = [start_url]
     search_list: car_obj.Search_List
+    searched_car_list = []
     links =[]
 
 
@@ -411,7 +411,7 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
     def get_info(self,response):
         print(response)
         curr_car = bs4_parse_car.autoria_parse_car_page(response.url)
-        add_to_car_list(curr_car,self.search_list)
+        add_to_car_list(curr_car,self.search_list,self.searched_car_list)
 
 class Car_dexpens_Parse_Spider(scrapy.Spider):
     name = "dexpensSpider"
@@ -546,10 +546,10 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
 #             None
 #
 #         # try:
-#         #     start_url_autoria=selenium_parse.selenium_parse_autoria(search_list)
-#         #     Car_autoria_Parse_Spider.start_urls = [start_url_autoria]
-#         #     Car_autoria_Parse_Spider.search_list = search_list
-#         #     process.crawl(Car_autoria_Parse_Spider)
+#             start_url_autoria=selenium_parse.selenium_parse_autoria(search_list)
+#             Car_autoria_Parse_Spider.start_urls = [start_url_autoria]
+#             Car_autoria_Parse_Spider.search_list = search_list
+#             process.crawl(Car_autoria_Parse_Spider)
 #         # except:None
 #
 #         # start_url_dexpens = selenium_parse.selenium_parse_dexpens(search_list)
@@ -599,10 +599,21 @@ def start_parse_car_site(search_list):
     Car_automoto_Parse_Spider.start_urls = [start_url_automoto]
     Car_automoto_Parse_Spider.search_list = search_list
 
+    start_url_autoria = selenium_parse.selenium_parse_autoria(search_list)
+    Car_autoria_Parse_Spider.start_urls = [start_url_autoria]
+    Car_autoria_Parse_Spider.search_list = search_list
+
+
+
+
+
+
+    process.crawl(Car_autoria_Parse_Spider)
     process.crawl(Car_automoto_Parse_Spider)
     process.start()
 
-    return Car_automoto_Parse_Spider.searched_car_list
+
+    return Car_automoto_Parse_Spider.searched_car_list+Car_autoria_Parse_Spider.searched_car_list
 
 
 

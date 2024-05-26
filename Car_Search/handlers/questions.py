@@ -11,7 +11,7 @@ from site_parse import scrapy_parse_car
 import re
 from concurrent.futures import ProcessPoolExecutor
 import asyncio
-executor = ThreadPoolExecutor(max_workers=4)
+
 
 def extract_year(text):
     years = re.findall(r'\b([1-9]\d{3})\b', text)
@@ -35,7 +35,6 @@ def normalize_attr(s: str):
         return s[0].upper() + s[1:].lower()
     except IndexError:
         return s
-
 def add_list_attr(key:str,value_Str,car_char):
     try:
         value_list=value_Str.split(',')
@@ -55,7 +54,6 @@ async def start_parse(search_list):
     with ThreadPoolExecutor() as pool:
         data= await loop.run_in_executor(pool,scrapy_parse_car.start_parse_car_site,search_list)
     return data
-
 async def test_start_parse(search_list):
     loop=asyncio.get_running_loop()
     with ThreadPoolExecutor() as pool:
@@ -90,6 +88,7 @@ class UserState(StatesGroup):
     input_price=State()
     input_description=State()
     search_car = State()
+    searched_car_list=State()
 
 @router.message(Command("start"))
 async def hello(message: Message):
@@ -341,7 +340,6 @@ async def searching(message: Message,state: FSMContext):
     )
 
     try:
-        # list_car = scrapy_parse_car.start_parse_car_site(car)
         car=data["search_car"]
         executor = ProcessPoolExecutor()
         future = executor.submit(scrapy_parse_car.start_parse_car_site, car)
@@ -360,6 +358,7 @@ async def searching(message: Message,state: FSMContext):
             message_text += message_text + '\n' + links + '\n'+'''Щоб подивить більше: /more'''
 
     except:
+        list_car=None
         message_text = f'''
         Щось пішло не так(((
         Щоб почати щераз напишіть: /set
@@ -370,6 +369,38 @@ async def searching(message: Message,state: FSMContext):
         reply_markup=ReplyKeyboardRemove(),
         parse_mode="html"
     )
+
+    await state.update_data(searched_car_list=list_car)
+    await state.set_state(UserState.searched_car_list)
+
+
+@router.message(Command("more"),UserState.searched_car_list)
+async def more(message: Message,state: FSMContext):
+    data = await state.get_data()
+    list_car=data["searched_car_list"]
+    message_text = f'''Інші варіанти:'''
+    links = ""
+    if len(list_car) <= 10:
+        for i in list_car:
+            links += i.link + '\n' + '\n'
+        message_text += message_text + '\n' + links + '''\n '''
+    else:
+        for i in range(0, 10):
+            links += list_car[i].link + '\n' + '\n'
+        list_car = list_car[10:]
+        message_text += message_text + '\n' + links + '\n' + '''Щоб подивить більше: /more'''
+
+    await message.answer(
+        text=message_text,
+        reply_markup=ReplyKeyboardRemove(),
+        parse_mode="html"
+    )
+    await state.update_data(searched_car_list=list_car)
+    await state.set_state(UserState.searched_car_list)
+
+
+
+
 @router.message(Command("test1"))
 async def test(message: Message):
     await message.answer(text="Погнали тест 1")
@@ -381,7 +412,7 @@ async def test(message: Message):
     char.add_attr("Колір", "Чорний")
     char.add_attr("Пробіг", "300")
     char.add_attr("Привід", "Передній")
-    car = car_obj.Car("Skoda", "Octavia", ["3000", "7000"], ["2000", "2010"], char, "Топ")
+    car = car_obj.Car("Skoda", "Octavia", ["3000", "5000"], ["2000", "2010"], char, "Топ")
 
     executor = ProcessPoolExecutor()
     future = executor.submit(scrapy_parse_car.start_parse_car_site, car)
@@ -414,6 +445,7 @@ async def test(message: Message):
     text = ""
     for car in list_car:
         text += car.link + '\n'
+
 
     text+='\n'+str(len(list_car))
     await message.answer(text=text)

@@ -180,7 +180,7 @@ def selenium_parse_automoto(car:car_obj.Car):
     return link
 def selenium_parse_autoria(car:car_obj.Car):
     chrome_options = webdriver.ChromeOptions()
-    #chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--headless')
     chrome_options.add_argument("window-size=1920x1080")
     chrome_options.add_argument('--disable-gpu')
     prefs = {"profile.default_content_setting_values.notifications": 2}
@@ -514,7 +514,7 @@ def selenium_parse_dexpens(car:car_obj.Car):
 
     return link
 
-
+#
 # char = car_obj.Car_Characteristics()
 # char.add_attr("Коробка", "Механіка")
 # char.add_attr("Двигун", "2")
