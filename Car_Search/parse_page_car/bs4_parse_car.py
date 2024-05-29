@@ -73,7 +73,7 @@ def automoto_parse_car_page(link)->car_obj.car_obj:
 
     return car
 def autoria_parse_car_page(link)->car_obj.car_obj:
-    # ### unique extractor
+
     url = link
     response = requests.get(url)
     print(response.status_code)
@@ -139,7 +139,7 @@ def autoria_parse_car_page(link)->car_obj.car_obj:
 
     return car
 def dexpens_parse_car_page(link)->car_obj.car_obj:
-    # ### unique extractor
+
     url = link
     response = requests.get(url)
     print(response.status_code)

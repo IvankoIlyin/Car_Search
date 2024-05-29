@@ -1,9 +1,7 @@
 
-from selenium import webdriver
-
 import scrapy
-from scrapy.crawler import CrawlerProcess, CrawlerRunner
-import logging
+from scrapy.crawler import CrawlerProcess
+
 import difflib
 from car_obj import car_obj
 import math
@@ -11,27 +9,11 @@ from parse_page_car import bs4_parse_car
 from selenium_parse import selenium_parse
 
 
-
-
-
-
-
-# logging.getLogger("scrapy").propagate = False
-# logging.basicConfig(
-#     level="INFO",
-#     format="[%(levelname)-5s] %(asctime)s\t-\t%(message)s",
-#     datefmt="%d/%m/%Y %I:%M:%S %p",
-# )
-
-username = "kizy"
-password = "dd5220-4902e5-ca7c78-712cbd-c377de"
-
-PROXY_RACK_DNS = "usa.rotating.proxyrack.net:9000"
-proxy = "http://cdfcd4e233464959ac5f1f8d45a9c05f:@proxy.crawlera.com:8011/"
 timeout = 60
 cat_timeout = 20
 
-def handle_error(failure):
+def check_error(failure):
+    print(failure)
     pass
 
 
@@ -186,8 +168,7 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
     name = "automotoSpider"
     allowed_domains = ["automoto.ua"]
     not_allowed_keyword = ['/katalog','/book-new-auto','/newauto']
-    check_ip_category = 0
-    check_ip_article_links = 0
+    check_ip = 0
     search_list: car_obj.Search_List
     start_url =None
     start_urls = [start_url]
@@ -201,28 +182,20 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
                 callback=self.parse,
                 dont_filter=True,
                 meta={"dont_retry": True, "download_timeout": timeout},
-                errback=handle_error,
+                errback=check_error,
             )
             yield res
 
-    def start_requests_ip(self, arg):
+    def start_requests_proxy(self):
         for i in self.start_urls:
-            res_ip = scrapy.Request(
+            res = scrapy.Request(
                 i,
-                meta={"proxy": proxy, "dont_retry": True, "download_timeout": timeout},
+                meta={"proxy": None, "dont_retry": True, "download_timeout": timeout},
                 callback=self.parse,
                 dont_filter=True,
-                errback=handle_error,
+                errback=check_error,
             )
-            yield res_ip
-
-            logging.info(
-                {
-                    "proxy": "1",
-                    "clean_url": self.allowed_domains[0],
-                    "link": i,
-                }
-            )
+            yield res
 
     def parse(self, response):
         if str(response.status) == "200":
@@ -240,12 +213,9 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
                                         yield scrapy.Request(
                                             link.css("a").attrib["href"],
                                             callback=self.get_info,
-                                            meta={"dont_retry": True, "download_timeout": cat_timeout,
-                                                  "base_url": response.url},
-                                            errback=handle_error,
+                                            meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                            errback=check_error,
                                         )
-
-
                                     except:
                                         pass
                                 else:
@@ -254,9 +224,8 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
                                         yield scrapy.Request(
                                             "https://automoto.ua" + link.css("a").attrib["href"],
                                             callback=self.get_info,
-                                            meta={"dont_retry": True, "download_timeout": cat_timeout,
-                                                  "base_url": response.url},
-                                            errback=handle_error,
+                                            meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                            errback=check_error,
                                         )
 
 
@@ -272,23 +241,23 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
                             yield scrapy.Request(
                                 next_page,
                                 callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": cat_timeout, "base_url": response.url},
-                                errback=handle_error,
+                                meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                errback=check_error,
                             )
                         else:
                             yield scrapy.Request(
                                 "https://automoto.ua" + next_page,
                                 callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": cat_timeout, "base_url": response.url},
-                                errback=handle_error,
+                                meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                errback=check_error,
                             )
 
 
 
         else:
-            while self.check_ip_category < 2:
-                yield response.follow(self.start_urls[0], callback=self.start_requests_ip)
-                self.check_ip_category += 1
+            while self.check_ip < 3:
+                yield response.follow(self.start_urls[0], callback=self.start_requests_proxy)
+                self.check_ip += 1
 
     def get_info(self,response):
          curr_car = bs4_parse_car.automoto_parse_car_page(response.url)
@@ -298,8 +267,7 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
     name = "autoriaSpider"
     allowed_domains = ["auto.ria.com"]
     not_allowed_keyword = []
-    check_ip_category = 0
-    check_ip_article_links = 0
+    check_ip = 0
     start_url = None
     start_urls = [start_url]
     search_list: car_obj.Search_List
@@ -314,28 +282,20 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
                 callback=self.parse,
                 dont_filter=True,
                 meta={"dont_retry": True, "download_timeout": timeout},
-                errback=handle_error,
+                errback=check_error,
             )
             yield res
 
-    def start_requests_ip(self, arg):
+    def start_requests_proxy(self):
         for i in self.start_urls:
-            res_ip = scrapy.Request(
+            res = scrapy.Request(
                 i,
-                meta={"proxy": proxy, "dont_retry": True, "download_timeout": timeout},
+                meta={"proxy": None, "dont_retry": True, "download_timeout": timeout},
                 callback=self.parse,
                 dont_filter=True,
-                errback=handle_error,
+                errback=check_error,
             )
-            yield res_ip
-
-            logging.info(
-                {
-                    "proxy": "1",
-                    "clean_url": self.allowed_domains[0],
-                    "link": i,
-                }
-            )
+            yield res
 
     def parse(self, response):
         if str(response.status) == "200":
@@ -353,9 +313,8 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
                                         yield scrapy.Request(
                                             link.css("a").attrib["href"],
                                             callback=self.get_info,
-                                            meta={"dont_retry": True, "download_timeout": cat_timeout,
-                                                  "base_url": response.url},
-                                            errback=handle_error,
+                                            meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                            errback=check_error,
                                         )
 
 
@@ -367,9 +326,8 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
                                         yield scrapy.Request(
                                             "https://auto.ria.com" + link.css("a").attrib["href"],
                                             callback=self.get_info,
-                                            meta={"dont_retry": True, "download_timeout": cat_timeout,
-                                                  "base_url": response.url},
-                                            errback=handle_error,
+                                            meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                            errback=check_error,
                                         )
 
 
@@ -385,23 +343,23 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
                             yield scrapy.Request(
                                 next_page,
                                 callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": cat_timeout, "base_url": response.url},
-                                errback=handle_error,
+                                meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                errback=check_error,
                             )
                         else:
                             yield scrapy.Request(
                                 "https://auto.ria.com" + next_page,
                                 callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": cat_timeout, "base_url": response.url},
-                                errback=handle_error,
+                                meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                errback=check_error,
                             )
 
 
 
         else:
-            while self.check_ip_category < 2:
-                yield response.follow(self.start_urls[0], callback=self.start_requests_ip)
-                self.check_ip_category += 1
+            while self.check_ip < 3:
+                yield response.follow(self.start_urls[0], callback=self.start_requests_proxy)
+                self.check_ip+= 1
 
     def get_info(self,response):
         print(response)
@@ -412,8 +370,7 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
     name = "dexpensSpider"
     allowed_domains = ["dexpens.com"]
     not_allowed_keyword = []
-    check_ip_category = 0
-    check_ip_article_links = 0
+    check_ip = 0
     start_url = None
     start_urls = [start_url]
     search_list: car_obj.Search_List
@@ -427,28 +384,22 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
                 callback=self.parse,
                 dont_filter=True,
                 meta={"dont_retry": True, "download_timeout": timeout},
-                errback=handle_error,
+                errback=check_error,
             )
             yield res
 
-    def start_requests_ip(self, arg):
+    def start_requests_proxy(self, arg):
         for i in self.start_urls:
-            res_ip = scrapy.Request(
+            res = scrapy.Request(
                 i,
-                meta={"proxy": proxy, "dont_retry": True, "download_timeout": timeout},
+                meta={"proxy": None, "dont_retry": True, "download_timeout": timeout},
                 callback=self.parse,
                 dont_filter=True,
-                errback=handle_error,
+                errback=check_error,
             )
-            yield res_ip
+            yield res
 
-            logging.info(
-                {
-                    "proxy": "1",
-                    "clean_url": self.allowed_domains[0],
-                    "link": i,
-                }
-            )
+
 
     def parse(self, response):
         if str(response.status) == "200":
@@ -466,9 +417,8 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
                                         yield scrapy.Request(
                                             link.css("a").attrib["href"],
                                             callback=self.get_info,
-                                            meta={"dont_retry": True, "download_timeout": cat_timeout,
-                                                  "base_url": response.url},
-                                            errback=handle_error,
+                                            meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                            errback=check_error,
                                         )
 
 
@@ -480,9 +430,8 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
                                         yield scrapy.Request(
                                             "https://www.dexpens.com" + link.css("a").attrib["href"],
                                             callback=self.get_info,
-                                            meta={"dont_retry": True, "download_timeout": cat_timeout,
-                                                  "base_url": response.url},
-                                            errback=handle_error,
+                                            meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                            errback=check_error,
                                         )
 
 
@@ -498,23 +447,23 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
                             yield scrapy.Request(
                                 next_page,
                                 callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": cat_timeout, "base_url": response.url},
-                                errback=handle_error,
+                                meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                errback=check_error,
                             )
                         else:
                             yield scrapy.Request(
                                 "https://www.dexpens.com" + next_page,
                                 callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": cat_timeout, "base_url": response.url},
-                                errback=handle_error,
+                                meta={"dont_retry": True, "download_timeout": cat_timeout},
+                                errback=check_error,
                             )
 
 
 
         else:
-            while self.check_ip_category < 2:
-                yield response.follow(self.start_urls[0], callback=self.start_requests_ip)
-                self.check_ip_category += 1
+            while self.check_ip < 3:
+                yield response.follow(self.start_urls[0], callback=self.start_requests_proxy)
+                self.check_ip += 1
 
     def get_info(self,response):
         curr_car = bs4_parse_car.dexpens_parse_car_page(response.url)
@@ -525,8 +474,7 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
 def start_parse_car_site(search_list):
     process = CrawlerProcess(settings={
         "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
-        'FEED_EXPORT_FIELDS': ["url", "desc"],
-        "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
+        "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
     })
 
     start_url_automoto = selenium_parse.selenium_parse_automoto(search_list)
@@ -548,29 +496,25 @@ def start_parse_car_site(search_list):
     return list
 
 #
-# char=car_obj.Car_Characteristics()
-# char.add_attr("Коробка","Механіка")
-# char.add_attr("Коробка","Автомат")
-# char.add_attr("Паливо","Бензин")
-# char.add_attr("Паливо","Дизель")
-# char.add_attr("Двигун","2")
-# char.add_attr("Кузов","Седан")
-# char.add_attr("Кузов","Купе")
-# char.add_attr("Колір","Чорний")
-# char.add_attr("Колір","Білий")
-# char.add_attr("Пробіг","300")
-# char.add_attr("Привід","Задній")
-# char.add_attr("Привід","Передній")
+char=car_obj.Car_Characteristics()
+char.add_attr("Коробка","Механіка")
+char.add_attr("Коробка","Автомат")
+char.add_attr("Паливо","Бензин")
+char.add_attr("Паливо","Дизель")
+char.add_attr("Двигун","2")
+char.add_attr("Кузов","Седан")
+char.add_attr("Пробіг","300")
+char.add_attr("Привід","Передній")
 
-# car=car_obj.Car("Skoda","Octavia",["3000","5000"],["2000","2010"],char,"Топ")
-#
-# char.display_all_characteristics()
-#
-# searched_car_list=start_parse_car_site(car)
-#
-#
-# for i in searched_car_list:
-#     print(i.link)
+car=car_obj.Car("Skoda","Octavia",["3000","5000"],["2000","2010"],char,"Топ")
+
+char.display_all_characteristics()
+
+searched_car_list=start_parse_car_site(car)
+
+
+for i in searched_car_list:
+    print(i.link)
 
 
 
