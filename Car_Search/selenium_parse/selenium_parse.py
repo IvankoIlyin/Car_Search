@@ -8,56 +8,61 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from car_obj import car_obj
 
-
-def cleanup_driver(driver, user_data_dir):
-    driver.quit()
-    shutil.rmtree(user_data_dir)  # Очистка временной директории
+def time_sllep():
+    time.sleep(0.5)
 
 def selenium_parse_automoto(car:car_obj.Car):
 
     options=webdriver.ChromeOptions()
     options.add_argument('--headless')
-    options.add_argument("window-size=1920x1080")
+    options.add_argument('window-size=1920x1080')
     options.add_argument('--disable-gpu')
     driver = webdriver.Chrome(options=options)
+
     link='https://automoto.ua/uk/'
     driver.get(link)
-    time.sleep(1)
+    time_sllep()
     #mark
     try:
-        driver.find_element(By.CSS_SELECTOR,'.choices .choices__inner').click()
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR,'.choices__input.choices__input--cloned[aria-label="Марка"]').send_keys(car.mark)
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR,'.choices__list .choices__item:first-child.is-highlighted').click()
-        time.sleep(1)
+        if car.mark!="":
+            driver.find_element(By.CSS_SELECTOR,'.choices .choices__inner').click()
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR,'.choices__input.choices__input--cloned[aria-label="Марка"]').send_keys(car.mark)
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR,'.choices__list .choices__item:first-child.is-highlighted').click()
+            time_sllep()
     except:
         None
     #model
     try:
-        driver.find_element(By.CSS_SELECTOR,'.choices_model+ .choices__list--single .choices__item--selectable').click()
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR,'.choices__input.choices__input--cloned[aria-label="Модель"]').send_keys(car.model)
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR,'.choices__list .choices__item:first-child.is-highlighted').click()
-        time.sleep(1)
+        if car.model != "":
+            driver.find_element(By.CSS_SELECTOR,'.choices_model+ .choices__list--single .choices__item--selectable').click()
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR,'.choices__input.choices__input--cloned[aria-label="Модель"]').send_keys(car.model)
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR,'.choices__list .choices__item:first-child.is-highlighted').click()
+            time_sllep()
     except:
         None
     # Price
     try:
-        price = driver.find_element(By.CSS_SELECTOR, 'input[name="price[from]"]')
-        price.send_keys(car.price[0])
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR, 'select[name="year[from]"] option[value="' + car.year[0] + '"]').click()
-        time.sleep(1)
+        if car.price[0] != "":
+            price = driver.find_element(By.CSS_SELECTOR, 'input[name="price[from]"]')
+            price.send_keys(car.price[0])
+            time_sllep()
+        if car.year[0] != "":
+            driver.find_element(By.CSS_SELECTOR, 'select[name="year[from]"] option[value="' + car.year[0] + '"]').click()
+            time_sllep()
     except:None
     # Year
     try:
-        price = driver.find_element(By.CSS_SELECTOR, 'input[name="price[to]"]')
-        price.send_keys(car.price[1])
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR, 'select[name="year[to]"] option[value="' + car.year[1] + '"]').click()
-        time.sleep(1)
+        if car.price[1] != "":
+            price = driver.find_element(By.CSS_SELECTOR, 'input[name="price[to]"]')
+            price.send_keys(car.price[1])
+            time_sllep()
+        if car.year[1] != "":
+            driver.find_element(By.CSS_SELECTOR, 'select[name="year[to]"] option[value="' + car.year[1] + '"]').click()
+            time_sllep()
     except:None
 
 
@@ -65,111 +70,93 @@ def selenium_parse_automoto(car:car_obj.Car):
 
     #Search
     driver.find_element(By.CSS_SELECTOR,".btn-main.btn-block").click()
-    time.sleep(1)
+    time_sllep()
 
     #FILTER
 
 
     #body type
     try:
-        more=driver.find_element(By.CSS_SELECTOR,'#collapseBodyType+ .collapsed')
-        driver.execute_script("arguments[0].scrollIntoView(true);", more)
-        time.sleep(1)
-        more.click()
-        for i in car.characteristics.body_type.value:
-            body_type=driver.find_element(By.XPATH,'.//div[contains(concat(" ",normalize-space(@class)," ")," custom-control ")][contains(normalize-space(),"'+i+'")]')
-            driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
-            time.sleep(1)
-            body_type.click()
+        if car.characteristics.body_type.value:
+            more=driver.find_element(By.CSS_SELECTOR,'#collapseBodyType+ .collapsed')
+            driver.execute_script("arguments[0].scrollIntoView(true);", more)
+            time_sllep()
+            more.click()
+            for i in car.characteristics.body_type.value:
+                body_type=driver.find_element(By.XPATH,'.//div[contains(concat(" ",normalize-space(@class)," ")," custom-control ")][contains(normalize-space(),"'+i+'")]')
+                driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
+                time_sllep()
+                body_type.click()
+
     except:None
 
-    try:
-        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
-        time.sleep(1)
-    except:
-        None
 
     #transmission
     try:
-        more = driver.find_element(By.CSS_SELECTOR, '#collapseTransmission+ .collapsed')
-        driver.execute_script("arguments[0].scrollIntoView(true);", more)
-        time.sleep(1)
-        more.click()
-        for i in car.characteristics.transmission.value:
-            transmission=driver.find_element(By.XPATH,
-                                './/div[contains(concat(" ",normalize-space(@class)," ")," custom-control ")][contains(normalize-space(),"' + i + '")]')
-            driver.execute_script("arguments[0].scrollIntoView(true);", transmission)
-            time.sleep(1)
-            transmission.click()
+        if car.characteristics.transmission.value:
+            more = driver.find_element(By.CSS_SELECTOR, '#collapseTransmission+ .collapsed')
+            driver.execute_script("arguments[0].scrollIntoView(true);", more)
+            time_sllep()
+            more.click()
+            for i in car.characteristics.transmission.value:
+                transmission=driver.find_element(By.XPATH,
+                                    './/div[contains(concat(" ",normalize-space(@class)," ")," custom-control ")][contains(normalize-space(),"' + i + '")]')
+                driver.execute_script("arguments[0].scrollIntoView(true);", transmission)
+                time_sllep()
+                transmission.click()
     except:None
 
-    try:
-        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
-        time.sleep(1)
-    except:
-        None
+
 
     # engine_capacity
     try:
-        for i in car.characteristics.engine_capacity.value:
-            engine_capacity = driver.find_element(By.CSS_SELECTOR, 'input[name="engine_volume[to]')
-            driver.execute_script("arguments[0].scrollIntoView(true);", engine_capacity)
-            time.sleep(1)
-            engine_capacity.send_keys(str(i))
+        if car.characteristics.engine_capacity.value:
+            for i in car.characteristics.engine_capacity.value:
+                engine_capacity = driver.find_element(By.CSS_SELECTOR, 'input[name="engine_volume[to]')
+                driver.execute_script("arguments[0].scrollIntoView(true);", engine_capacity)
+                time_sllep()
+                engine_capacity.send_keys(str(i))
     except:None
 
-    try:
-        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
-        time.sleep(1)
-    except:
-        None
 
     #drive_type
     try:
-        for i in car.characteristics.drive_type.value:
-            drive_type=driver.find_element(By.XPATH,
-                                './/div[contains(concat(" ",normalize-space(@class)," ")," custom-control ")][contains(normalize-space(),"' + i + '")]')
-            driver.execute_script("arguments[0].scrollIntoView(true);", drive_type)
-            time.sleep(1)
-            drive_type.click()
+        if car.characteristics.drive_type.value:
+            for i in car.characteristics.drive_type.value:
+                drive_type=driver.find_element(By.XPATH,
+                                    './/div[contains(concat(" ",normalize-space(@class)," ")," custom-control ")][contains(normalize-space(),"' + i + '")]')
+                driver.execute_script("arguments[0].scrollIntoView(true);", drive_type)
+                time_sllep()
+                drive_type.click()
     except:None
 
-    try:
-        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
-        time.sleep(1)
-    except:
-        None
 
     #mileage
     try:
-        for i in car.characteristics.mileage.value:
-            mileage=driver.find_element(By.CSS_SELECTOR,'input[name="mileage[to]"]')
-            driver.execute_script("arguments[0].scrollIntoView(true);", mileage)
-            time.sleep(1)
-            mileage.send_keys(str(i))
+        if car.characteristics.mileage.value:
+            for i in car.characteristics.mileage.value:
+                mileage=driver.find_element(By.CSS_SELECTOR,'input[name="mileage[to]"]')
+                driver.execute_script("arguments[0].scrollIntoView(true);", mileage)
+                time_sllep()
+                mileage.send_keys(str(i))
     except: None
-
-    try:
-        driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
-        time.sleep(1)
-    except:
-        None
 
 
     # color
     try:
-        for i in car.characteristics.color.value:
-            drive_type = driver.find_element(By.XPATH,
-                                             './/div[contains(concat(" ",normalize-space(@class)," ")," custom-control ")][contains(normalize-space(),"' + i + '")]')
-            driver.execute_script("arguments[0].scrollIntoView(true);", drive_type)
-            time.sleep(1)
-            drive_type.click()
-            time.sleep(1)
+        if car.characteristics.color.value:
+            for i in car.characteristics.color.value:
+                drive_type = driver.find_element(By.XPATH,
+                                                 './/div[contains(concat(" ",normalize-space(@class)," ")," custom-control ")][contains(normalize-space(),"' + i + '")]')
+                driver.execute_script("arguments[0].scrollIntoView(true);", drive_type)
+                time_sllep()
+                drive_type.click()
+                time_sllep()
     except:None
 
     try:
         driver.find_element(By.CSS_SELECTOR, 'button.btn.btn-main[type="submit"]').click()
-        time.sleep(1)
+        time_sllep()
     except:
         None
 
@@ -188,7 +175,7 @@ def selenium_parse_autoria(car:car_obj.Car):
     driver = webdriver.Chrome(options=chrome_options)
     link='https://auto.ria.com/uk/'
     driver.get(link)
-    time.sleep(1)
+    time_sllep()
     try:
         driver.find_element(By.CSS_SELECTOR,'.c-notifier-container.c-notifier-start label.js-close[onclick="setAllGdpr()"]').click()
     except:
@@ -196,26 +183,28 @@ def selenium_parse_autoria(car:car_obj.Car):
 
     # mark
     try:
-        driver.find_element(By.CSS_SELECTOR, '#brandTooltipBrandAutocomplete-brand').click()
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR, '#brandTooltipBrandAutocomplete-brand input[placeholder="Пошук..."]').send_keys(
-            car.mark)
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR, '#brandTooltipBrandAutocomplete-brand ul.unstyle.scrollbar.autocomplete-select li.list-item:first-child').click()
-        time.sleep(1)
+        if car.mark!="":
+            driver.find_element(By.CSS_SELECTOR, '#brandTooltipBrandAutocomplete-brand').click()
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR, '#brandTooltipBrandAutocomplete-brand input[placeholder="Пошук..."]').send_keys(
+                car.mark)
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR, '#brandTooltipBrandAutocomplete-brand ul.unstyle.scrollbar.autocomplete-select li.list-item:first-child').click()
+            time_sllep()
     except:
         None
 
     # model
     try:
-        driver.find_element(By.CSS_SELECTOR,
-                                '#brandTooltipBrandAutocomplete-model').click()
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR,
-                                '#brandTooltipBrandAutocomplete-model input[placeholder="Пошук..."]').send_keys(car.model)
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR, '#brandTooltipBrandAutocomplete-model ul.unstyle.scrollbar.autocomplete-select li.list-item:first-child').click()
-        time.sleep(1)
+        if car.model != "":
+            driver.find_element(By.CSS_SELECTOR,
+                                    '#brandTooltipBrandAutocomplete-model').click()
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR,
+                                    '#brandTooltipBrandAutocomplete-model input[placeholder="Пошук..."]').send_keys(car.model)
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR, '#brandTooltipBrandAutocomplete-model ul.unstyle.scrollbar.autocomplete-select li.list-item:first-child').click()
+            time_sllep()
     except:
         None
 
@@ -223,26 +212,26 @@ def selenium_parse_autoria(car:car_obj.Car):
     try:
             driver.find_element(By.CSS_SELECTOR, '.e-year ._grey').click()
             if car.year[0]!="":
-                time.sleep(1)
+                time_sllep()
                 driver.find_element(By.CSS_SELECTOR, '#yearFrom').click()
-                time.sleep(1)
+                time_sllep()
                 driver.find_element(By.CSS_SELECTOR, 'select#yearFrom option[value="' + car.year[0] + '"]').click()
-                time.sleep(1)
+                time_sllep()
             else:None
             if car.year[1] != "":
                 driver.find_element(By.CSS_SELECTOR, '#yearTo').click()
-                time.sleep(1)
+                time_sllep()
                 driver.find_element(By.CSS_SELECTOR, 'select#yearTo option[value="' + car.year[1] + '"]').click()
-                time.sleep(1)
+                time_sllep()
             else:
                 None
             clickable = driver.find_element(By.CSS_SELECTOR, '.popup-body')
             ActionChains(driver) \
                 .click(clickable) \
                 .perform()
-            time.sleep(1)
+            time_sllep()
             driver.find_element(By.CSS_SELECTOR, 'label.fold[for="forYear"]').click()
-            time.sleep(1)
+            time_sllep()
 
 
     except:
@@ -251,14 +240,16 @@ def selenium_parse_autoria(car:car_obj.Car):
 
     # Price
     try:
-        driver.find_element(By.CSS_SELECTOR, '.e-cost ._grey').click()
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR, 'input#priceFrom').send_keys(car.price[0])
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR, 'input#priceTo').send_keys(car.price[1])
-        time.sleep(1)
-        driver.find_element(By.CSS_SELECTOR, 'label.fold[for="forPrice"]').click()
-        time.sleep(1)
+        if car.price[0] != "":
+            driver.find_element(By.CSS_SELECTOR, '.e-cost ._grey').click()
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR, 'input#priceFrom').send_keys(car.price[0])
+            time_sllep()
+        if car.price[1] != "":
+            driver.find_element(By.CSS_SELECTOR, 'input#priceTo').send_keys(car.price[1])
+            time_sllep()
+            driver.find_element(By.CSS_SELECTOR, 'label.fold[for="forPrice"]').click()
+            time_sllep()
     except:
         None
 
@@ -266,125 +257,111 @@ def selenium_parse_autoria(car:car_obj.Car):
 
     # Search
     driver.find_element(By.CSS_SELECTOR, ".full").click()
-    time.sleep(1)
+    time.sleep(3)
 
     # FILTER
 
     # body type
     try:
-        driver.execute_script("arguments[0].scrollIntoView(true);",
-                              driver.find_element(By.CSS_SELECTOR, '#bodyBlock .bold'))
+        if car.characteristics.body_type.value:
+            driver.execute_script("arguments[0].scrollIntoView(true);",
+                                  driver.find_element(By.CSS_SELECTOR, '#bodyBlock .bold'))
 
-        time.sleep(3)
-
-
-        clickable = driver.find_element(By.CSS_SELECTOR, '#bodyBlock .open')
-        ActionChains(driver) \
-            .click(clickable) \
-            .perform()
-
-        time.sleep(3)
-        for i in car.characteristics.body_type.value:
-            body_type = driver.find_element(By.XPATH,
-                                            './/*[contains(concat(" ",normalize-space(@class)," ")," item-rows ")][@title="Тип кузова"]//label[contains(normalize-space(),"'+i+'")]')
-            driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
             time.sleep(1)
-            body_type.click()
+
+
+            clickable = driver.find_element(By.CSS_SELECTOR, '#bodyBlock .open')
+            ActionChains(driver) \
+                .click(clickable) \
+                .perform()
+
+            time.sleep(2)
+            for i in car.characteristics.body_type.value:
+                body_type = driver.find_element(By.XPATH,
+                                                './/*[contains(concat(" ",normalize-space(@class)," ")," item-rows ")][@title="Тип кузова"]//label[contains(normalize-space(),"'+i+'")]')
+                driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
+                time.sleep(1)
+                body_type.click()
     except:
         None
 
 
-    try:
-        driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
-        time.sleep(1)
-    except:
-        None
 
     # mileage
     try:
-        for i in car.characteristics.mileage.value:
-            engine_capacity = driver.find_element(By.CSS_SELECTOR, 'input[name="mileage.lte')
-            driver.execute_script("arguments[0].scrollIntoView(true);", engine_capacity)
-            time.sleep(1)
-            engine_capacity.send_keys(str(i))
-    except:
-        None
-
-
-    try:
-        driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
-        time.sleep(1)
-    except:
-        None
-
-
-    # transmission
-    try:
-        driver.execute_script("arguments[0].scrollIntoView(true);",
-                              driver.find_element(By.CSS_SELECTOR, '#gearboxBlock .bold'))
-
-        time.sleep(1)
-
-        clickable = driver.find_element(By.CSS_SELECTOR, '#gearboxBlock .open')
-        ActionChains(driver) \
-            .click(clickable) \
-            .perform()
-
-        time.sleep(1)
-        for i in car.characteristics.transmission.value:
-            body_type = driver.find_element(By.XPATH,
-                                            './/*[contains(concat(" ",normalize-space(@class)," ")," item-rows ")][@title="Коробка передач"]//label[contains(normalize-space(),"'+i+'")]')
-            time.sleep(1)
-            driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
-            time.sleep(1)
-            body_type.click()
-            time.sleep(1)
-    except:
-        None
-
-
-    try:
-        driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
-        time.sleep(1)
-    except:
-        None
-
-    # engine_capacity
-    try:
-            for i in car.characteristics.engine_capacity.value:
-                engine_capacity = driver.find_element(By.CSS_SELECTOR, 'input[name="engine.lte')
+        if car.characteristics.mileage.value:
+            for i in car.characteristics.mileage.value:
+                engine_capacity = driver.find_element(By.CSS_SELECTOR, 'input[name="mileage.lte')
                 driver.execute_script("arguments[0].scrollIntoView(true);", engine_capacity)
-                time.sleep(1)
+                time_sllep()
                 engine_capacity.send_keys(str(i))
     except:
         None
 
 
+
+    # transmission
     try:
-        driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
-        time.sleep(1)
+        if car.characteristics.transmission.value:
+            driver.execute_script("arguments[0].scrollIntoView(true);",
+                                  driver.find_element(By.CSS_SELECTOR, '#gearboxBlock .bold'))
+
+            time_sllep()
+
+            clickable = driver.find_element(By.CSS_SELECTOR, '#gearboxBlock .open')
+            ActionChains(driver) \
+                .click(clickable) \
+                .perform()
+
+            time_sllep()
+            for i in car.characteristics.transmission.value:
+                body_type = driver.find_element(By.XPATH,
+                                                './/*[contains(concat(" ",normalize-space(@class)," ")," item-rows ")][@title="Коробка передач"]//label[contains(normalize-space(),"'+i+'")]')
+                time_sllep()
+                driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
+                time_sllep()
+                body_type.click()
+                time_sllep()
     except:
         None
+
+
+
+
+    # engine_capacity
+    try:
+        if car.characteristics.engine_capacity.value:
+            for i in car.characteristics.engine_capacity.value:
+                engine_capacity = driver.find_element(By.CSS_SELECTOR, 'input[name="engine.lte')
+                driver.execute_script("arguments[0].scrollIntoView(true);", engine_capacity)
+                time_sllep()
+                engine_capacity.send_keys(str(i))
+    except:
+        None
+
+
+
 
 
     # drive_type
     try:
-        driver.execute_script("arguments[0].scrollIntoView(true);",
-                              driver.find_element(By.CSS_SELECTOR, '#driveBlock .bold'))
+        if car.characteristics.drive_type.value:
+            driver.execute_script("arguments[0].scrollIntoView(true);",
+                                  driver.find_element(By.CSS_SELECTOR, '#driveBlock .bold'))
 
-        time.sleep(1)
-        for i in car.characteristics.drive_type.value:
-            body_type = driver.find_element(By.CSS_SELECTOR,
-                                            '.item-rows[title="Тип приводу"] label[title="' + i + '"]')
-            driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
-            time.sleep(1)
-            body_type.click()
+            time_sllep()
+            for i in car.characteristics.drive_type.value:
+                body_type = driver.find_element(By.CSS_SELECTOR,
+                                                '.item-rows[title="Тип приводу"] label[title="' + i + '"]')
+                driver.execute_script("arguments[0].scrollIntoView(true);", body_type)
+                time_sllep()
+                body_type.click()
     except:
         None
 
     try:
         driver.find_element(By.CSS_SELECTOR, '#floatingSearchButton').click()
-        time.sleep(1)
+        time_sllep()
     except:
         None
 
@@ -519,10 +496,14 @@ def selenium_parse_dexpens(car:car_obj.Car):
 # char.add_attr("Коробка", "Механіка")
 # char.add_attr("Двигун", "2")
 # char.add_attr("Кузов", "Седан")
+# char.add_attr("Кузов", "Купе")
 # char.add_attr("Колір", "Чорний")
+# char.add_attr("Колір", "Білий")
 # char.add_attr("Пробіг", "300")
 # char.add_attr("Привід", "Передній")
-# car = car_obj.Car("Audi", "", ["", ""], ["", ""], char, "Топ")
+# char.add_attr("Привід", "Задній")
+# char.add_attr("Привід", "Ланцюг")
+# car = car_obj.Car("Audi", "A4", ["3000", "5000"], ["2000", "2010"], char, "Топ")
 # car.characteristics.display_all_characteristics()
 #
 # print(selenium_parse_autoria(car))

@@ -1,6 +1,6 @@
-import concurrent.futures
-from asyncio import wait_for
-from concurrent.futures import ThreadPoolExecutor
+
+from selenium import webdriver
+
 import scrapy
 from scrapy.crawler import CrawlerProcess, CrawlerRunner
 import logging
@@ -9,16 +9,11 @@ from car_obj import car_obj
 import math
 from parse_page_car import bs4_parse_car
 from selenium_parse import selenium_parse
-from scrapy.crawler import CrawlerRunner
-from twisted.internet import reactor, defer
-import asyncio
-from scrapy.crawler import CrawlerRunner
-from scrapy.utils.project import get_project_settings
-from scrapy.utils.log import configure_logging
-from crochet import setup, wait_for
 
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
+
+
+
+
 
 
 # logging.getLogger("scrapy").propagate = False
@@ -151,7 +146,7 @@ def add_to_car_list(curr_car,search_car:car_obj.Car,searched_car_list):
 
                     if similarity_list_str(curr_car_info[i].value,search_car_info[i].value)!=True:
                         check_info=False
-                        print("Fuuuuck")
+                        print("Bad")
 
                 if check_info==True:
                     searched_car_list.append(curr_car)
@@ -181,7 +176,7 @@ def sort_list_by_description(list,search_description):
     n=len(list)
     for i in range(n):
         for j in range(0, n - i - 1):
-            if similarity_descr(list[j].description,search_description)<similarity_descr(list[j+1].description,search_description):
+            if similarity_descr(list[j].description,search_description.dedescription)<similarity_descr(list[j+1].description,search_description.dedescription):
                 list[j],list[j+1]=list[j+1],list[j]
 
     return list
@@ -527,67 +522,6 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
 
 
 #Run_All
-# def start_parse_car_site(search_list):
-#
-#         process = CrawlerProcess(settings={
-#             "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
-#             'FEED_EXPORT_FIELDS': ["url", "desc"],
-#             "USER_AGENT": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36"
-#         })
-#
-#         searched_car_list = []
-#         try:
-#             start_url_automoto=selenium_parse.selenium_parse_automoto(search_list)
-#             Car_automoto_Parse_Spider.start_urls = [start_url_automoto]
-#             Car_automoto_Parse_Spider.search_list = search_list
-#             Car_automoto_Parse_Spider.searched_car_list=searched_car_list
-#             process.crawl(Car_automoto_Parse_Spider)
-#         except:
-#             None
-#
-#         # try:
-#             start_url_autoria=selenium_parse.selenium_parse_autoria(search_list)
-#             Car_autoria_Parse_Spider.start_urls = [start_url_autoria]
-#             Car_autoria_Parse_Spider.search_list = search_list
-#             process.crawl(Car_autoria_Parse_Spider)
-#         # except:None
-#
-#         # start_url_dexpens = selenium_parse.selenium_parse_dexpens(search_list)
-#         # Car_dexpens_Parse_Spider.start_urls = [start_url_dexpens]
-#         # Car_dexpens_Parse_Spider.search_list = search_list
-#         # process.crawl(Car_dexpens_Parse_Spider)
-#
-#         process.start()
-#
-#         searched_car_list=Car_automoto_Parse_Spider.searched_car_list
-#         #sort_list_by_description(searched_car_list,search_list.dedescription)
-#
-#         return searched_car_list
-
-# char=car_obj.Car_Characteristics()
-# char.add_attr("Коробка","Механіка")
-# char.add_attr("Коробка","Автомат")
-# char.add_attr("Паливо","Бензин")
-# char.add_attr("Паливо","Дизель")
-# char.add_attr("Двигун","2")
-# char.add_attr("Кузов","Седан")
-# char.add_attr("Кузов","Купе")
-# char.add_attr("Колір","Чорний")
-# char.add_attr("Колір","Білий")
-# char.add_attr("Пробіг","300")
-# char.add_attr("Привід","Задній")
-# char.add_attr("Привід","Передній")
-# car=car_obj.Car("Skoda","Octavia",["3000","5000"],["2000","2010"],char,"Топ")
-#
-# char.display_all_characteristics()
-#
-# searched_car_list=start_parse_car_site(car)
-#
-#
-# for i in searched_car_list:
-#     print(i.link)
-
-
 def start_parse_car_site(search_list):
     process = CrawlerProcess(settings={
         "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
@@ -605,15 +539,40 @@ def start_parse_car_site(search_list):
 
 
 
-
-
-
     process.crawl(Car_autoria_Parse_Spider)
     process.crawl(Car_automoto_Parse_Spider)
     process.start()
+    list=Car_automoto_Parse_Spider.searched_car_list+Car_autoria_Parse_Spider.searched_car_list
+    list=sort_list_by_description(list,search_list)
+
+    return list
+
+#
+# char=car_obj.Car_Characteristics()
+# char.add_attr("Коробка","Механіка")
+# char.add_attr("Коробка","Автомат")
+# char.add_attr("Паливо","Бензин")
+# char.add_attr("Паливо","Дизель")
+# char.add_attr("Двигун","2")
+# char.add_attr("Кузов","Седан")
+# char.add_attr("Кузов","Купе")
+# char.add_attr("Колір","Чорний")
+# char.add_attr("Колір","Білий")
+# char.add_attr("Пробіг","300")
+# char.add_attr("Привід","Задній")
+# char.add_attr("Привід","Передній")
+
+# car=car_obj.Car("Skoda","Octavia",["3000","5000"],["2000","2010"],char,"Топ")
+#
+# char.display_all_characteristics()
+#
+# searched_car_list=start_parse_car_site(car)
+#
+#
+# for i in searched_car_list:
+#     print(i.link)
 
 
-    return Car_automoto_Parse_Spider.searched_car_list+Car_autoria_Parse_Spider.searched_car_list
 
 
 

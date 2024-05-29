@@ -45,6 +45,9 @@ class Car_Characteristics:
         self.body_type = Characteristic(["Тип кузова","Кузов"],body_type)
         self.color = Characteristic(["Колір"],color)
         self.mileage = Characteristic(["Пробіг"],mileage)
+
+
+
         self.all_info=[self.salesman,self.transmission,self.fuel_type,self.engine_capacity,self.drive_type,
                        self.body_type,self.color,self.mileage]
 
@@ -54,6 +57,15 @@ class Car_Characteristics:
         for i in value_keys:
             if s1.find(i)!=-1:
                 return True
+
+    def check_empty(self):
+        i=0
+        for attr, value in self.__dict__.items():
+            if isinstance(value, Characteristic):
+                if not value.value:
+                    i+=1
+
+        return i
 
     def add_attr(self, s1: str, s2: str):
         for attr, value in self.__dict__.items():

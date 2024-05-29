@@ -1,33 +1,68 @@
-import asyncio
+
 from concurrent.futures import ThreadPoolExecutor
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, ReplyKeyboardRemove
-from car_obj import car_obj
+
 from keyboards.simple_row import make_row_keyboard
 from site_parse import scrapy_parse_car
 import re
 from concurrent.futures import ProcessPoolExecutor
 import asyncio
 
+from car_obj import car_obj
 
+def check_price(prices):
+    if len(prices[1])==len(prices[0]) and int(prices[0][0])>int(prices[1][0]):
+        return[prices[1],prices[0]]
+
+    if int(prices[1])<int(prices[0]):
+        while len(prices[0]) >= len(prices[1]):
+            prices[1]=prices[1]+"0"
+
+    return prices
+
+def check_year(years):
+    if int(years[0])>int(years[1]):
+        return [years[1],years[0]]
+    if int(years[0])==int(years[1]):
+        return [years[0],""]
+    return years
+def split_car_name(car_name):
+    if car_name.find('..')!=-1:
+        return "",""
+    parts = car_name.split(maxsplit=1)
+    mark = parts[0]
+    model = parts[1] if len(parts) > 1 else None
+    mark=mark.strip()
+    model=model.strip()
+    return mark, model
 def extract_year(text):
     years = re.findall(r'\b([1-9]\d{3})\b', text)
     return years[-1] if years else None
 def extract_price(text):
     prices = re.findall(r'\b([1-9]\d*)\b', text)
     return prices[-1] if prices else None
-
 def price_year(text):
-    dict_symb = [' ','-', '.', ',', '\n']
-    for i in dict_symb:
-        price_arr=text.split(i)
-        if len(price_arr)>=2:
-            return price_arr
 
-    return None
+    text = text.strip()
+
+    dict_symb = [' ', '-', '.', ',', '\n']
+    for delim in dict_symb:
+        text = text.replace(delim, ',')
+
+    parts = text.split(',')
+
+    result = []
+
+    for part in parts:
+
+        number = re.sub(r'\D', '', part)
+        if number:
+            result.append(number)
+    return result
 
 def normalize_attr(s: str):
     try:
@@ -46,26 +81,32 @@ def add_list_attr(key:str,value_Str,car_char):
             except:
                 None
     except:
-        print('Fuuck')
+        None
 
     return car_char
-async def start_parse(search_list):
-    loop=asyncio.get_running_loop()
-    with ThreadPoolExecutor() as pool:
-        data= await loop.run_in_executor(pool,scrapy_parse_car.start_parse_car_site,search_list)
-    return data
-async def test_start_parse(search_list):
-    loop=asyncio.get_running_loop()
-    with ThreadPoolExecutor() as pool:
-        data= await loop.run_in_executor(pool,scrapy_parse_car.start_parse_car_site,search_list)
-    return data
+
+def count_char(car):
+    if car.mark=="" or car.model=="":
+        return False
+
+    try:
+        char_count=car.characteristics.check_empty()-2
+        if car.price[0]=="" or car.price[1]=="":
+            char_count+=1
+        if car.year[0] == "" or car.year[1] == "":
+            char_count += 1
+    except: char_count=0
+
+    if char_count>=3:
+        return False
+
+    return True
 
 
 router = Router()  # [1]
 
 other = "Інше"
 skip="Пропустити"
-
 available_salesmans = ["Компанія", "Автодилер","Власник", other,skip]
 available_transmissions = ["Автомат", "Механіка","Типтронік","Варіатор","Робот", other,skip]
 available_fuel_types = ["Дизель", "Бензин", "Газ","Електро","Водень","Гібрид", other,skip]
@@ -89,6 +130,7 @@ class UserState(StatesGroup):
     input_description=State()
     search_car = State()
     searched_car_list=State()
+    parse_runner=State()
 
 @router.message(Command("start"))
 async def hello(message: Message):
@@ -137,7 +179,7 @@ async def salesman_choosed(message: Message, state: FSMContext):
 
     if message.text == other:
         return await message.answer(
-            text="Введіть продавця самостійно(якщо більше одного варіанту - введіть через кому):",
+            text="Введіть продавця самостійно (якщо більше одного варіанту - введіть через кому):",
             reply_markup=ReplyKeyboardRemove()
         )
     await state.update_data(salesman=message.text)
@@ -151,7 +193,7 @@ async def salesman_choosed(message: Message, state: FSMContext):
 async def transmission_choosed(message: Message, state: FSMContext):
     if message.text == other:
         return await message.answer(
-            text="Введіть коробку передач самостійно(якщо більше одного варіанту - введіть через кому):",
+            text="Введіть коробку передач самостійно (якщо більше одного варіанту - введіть через кому):",
             reply_markup=ReplyKeyboardRemove()
         )
 
@@ -166,7 +208,7 @@ async def transmission_choosed(message: Message, state: FSMContext):
 async def fuel_type_choosed(message: Message, state: FSMContext):
     if message.text == other:
         return await message.answer(
-            text="Введіть тип палива самостійно(якщо більше одного варіанту - введіть через кому):",
+            text="Введіть тип палива самостійно (якщо більше одного варіанту - введіть через кому):",
             reply_markup=ReplyKeyboardRemove()
         )
 
@@ -190,7 +232,7 @@ async def engine_capacity_choosed(message: Message, state: FSMContext):
 async def drive_type_choosed(message: Message, state: FSMContext):
     if message.text == other:
         return await message.answer(
-            text="Введіть тип приводу самостійно(якщо більше одного варіанту - введіть через кому):",
+            text="Введіть тип приводу самостійно (якщо більше одного варіанту - введіть через кому):",
             reply_markup=ReplyKeyboardRemove()
         )
     await state.update_data(drive_type=message.text)
@@ -204,7 +246,7 @@ async def drive_type_choosed(message: Message, state: FSMContext):
 async def body_type_choosed(message: Message, state: FSMContext):
     if message.text == other:
         return await message.answer(
-            text="Введіть тип кузова самостійно(якщо більше одного варіанту - введіть через кому):",
+            text="Введіть тип кузова самостійно (якщо більше одного варіанту - введіть через кому):",
             reply_markup=ReplyKeyboardRemove()
         )
     await state.update_data(body_type=message.text)
@@ -218,7 +260,7 @@ async def body_type_choosed(message: Message, state: FSMContext):
 async def color_choosed(message: Message, state: FSMContext):
     if message.text == other:
         return await message.answer(
-            text="Введіть колір самостійно(якщо більше одного варіанту - введіть через кому):",
+            text="Введіть колір самостійно (якщо більше одного варіанту - введіть через кому):",
             reply_markup=ReplyKeyboardRemove()
         )
     await state.update_data(color=message.text)
@@ -244,6 +286,7 @@ async def description_choosed(message: Message, state: FSMContext):
 
 
     try:
+
         car_char = car_obj.Car_Characteristics()
         car_char=add_list_attr('Продавець', data["salesman"],car_char)
         car_char=add_list_attr('Коробка', data["transmission"],car_char)
@@ -254,64 +297,61 @@ async def description_choosed(message: Message, state: FSMContext):
         car_char=add_list_attr('Колір', data["color"],car_char)
         car_char=add_list_attr('Пробіг', data["mileage"],car_char)
         car_char.display_all_characteristics()
-        title = data["title"].split(' ')
-        mark,model="",""
+        title = data["title"]
         try:
-            mark=title[0]
+            mark,model=split_car_name(title)
         except:
             mark=""
-        try:
-            model=title[1]
-        except:
             model=""
 
-        year = data["years"].split('-')
-        years=[]
-        try:
-            years.append(year[0])
-        except:
-            years.append("")
-        try:
-            years.append(year[1])
-        except:
-            years.append("")
 
-        price = data["price"].split('-')
-        prices=[]
+
         try:
-            prices.append(price[0])
+            year = data["years"]
+            years=[extract_year(price_year(year)[0]),extract_year(price_year(year)[1])]
+            years=check_year(years)
         except:
-            prices.append("")
+            years=[]
+
         try:
-            prices.append(price[1])
+            price = data["price"]
+            prices=[extract_price(price_year(price)[0]),extract_price(price_year(price)[1])]
+            prices=check_price(prices)
         except:
-            prices.append("")
+            prices=[]
+
+
+
 
         car = car_obj.Car(mark,model,prices,years,car_char,data["description"])
-        await state.update_data(search_car=car)
-        message_text = f'''
-        
-        Назва: <b>{data["title"]}</b>
-        Ціна: <b>{data["price"]}</b>
-        Роки: <b>{data["years"]}</b>
-        
-        Оголошення від: <b>{data["salesman"]}</b>
-        Коробка передач: <b>{data["transmission"]}</b>
-        Тип палива: <b>{data["fuel_type"]}</b>
-        Привід: <b>{data["drive_type"]}</b>
-        Двигун: <b>{data["engine_capacity"]}</b>
-        Тип кузова: <b>{data["body_type"]}</b>
-        Колір: <b>{data["color"]}</b>
-        Пробіг: <b>{data["mileage"]}</b>
-        Опис: <b>{data["description"]}</b>
-        
-        Якщо інформація НЕ ВІРНА почніть спочатку: /set
-        
-        Якщо інформація ВІРНА почніть спочатку: /search
-        '''
+        if count_char(car)==True:
+            await state.update_data(search_car=car)
+            message_text = f'''
+            Назва: <b>{mark+' '+model}</b>
+            Ціна: <b>{'від '+ prices[0]+'$ до '+prices[1]+'$'}</b>
+            Рік випуску: <b>{'від '+ years[0]+'р.в до '+years[1]+'р.в'}</b>
+            
+            Оголошення від: <b>{data["salesman"]}</b>
+            Коробка передач: <b>{data["transmission"]}</b>
+            Тип палива: <b>{data["fuel_type"]}</b>
+            Привід: <b>{data["drive_type"]}</b>
+            Двигун: <b>{data["engine_capacity"]}</b>
+            Тип кузова: <b>{data["body_type"]}</b>
+            Колір: <b>{data["color"]}</b>
+            Пробіг: <b>{data["mileage"]}</b>
+            Опис: <b>{data["description"]}</b>
+            
+            Якщо інформація НЕ ВІРНА почніть спочатку: /set
+            
+            Якщо інформація ВІРНА почніть пошук: /search
+            '''
+
+        if count_char(car) == False:
+            message_text = f'''Замало даних, почніть спочатку: /set'''
 
 
-    except:
+    except Exception as e:
+        print("Помилка:", e)
         message_text = f'''
                 Щось пішло не так або дані були введені некоректно(((
                 Щоб почати щераз напишіть:/set
@@ -330,34 +370,37 @@ async def description_choosed(message: Message, state: FSMContext):
 @router.message(Command("search"),UserState.search_car)
 async def searching(message: Message,state: FSMContext):
     data = await state.get_data()
-    message_text = f'''
-        Шукаємо авто...
-        '''
-    await message.answer(
-        text=message_text,
-        reply_markup=ReplyKeyboardRemove(),
-        parse_mode="html"
-    )
-
+    await message.answer(text="Шукаємо...")
     try:
+
         car=data["search_car"]
         executor = ProcessPoolExecutor()
         future = executor.submit(scrapy_parse_car.start_parse_car_site, car)
         list_car = await asyncio.get_event_loop().run_in_executor(None, future.result)
-        links=""
-        message_text = f'''ЗНАЙШЛИ!!! '''
+        if list_car:
+            links=f''''''
+            message_text = f'''ЗНАЙШЛИ!!! '''
 
-        if len(list_car)<=10:
-            for i in list_car:
-                links+=i.link+'\n'+'\n'
-            message_text+=message_text+ '\n'  + links + '''\n '''
-        else:
-            for i in range(0,10):
-                links+=list_car[i].link+'\n'+'\n'
-            list_car=list_car[10:]
-            message_text += message_text + '\n' + links + '\n'+'''Щоб подивить більше: /more'''
+            if len(list_car)<=10:
+                for i in list_car:
+                    car_text= i.title + ' ' + i.price + '\n'
+                    links += f'''<a href="{i.link}">{car_text}</a>'''
+                message_text=message_text+ '\n'  + links + '''\n '''
+                message_text = message_text +"Почати ще раз: /set"
+            else:
+                for i in range(0,10):
+                    car_text = list_car[i].title + ' ' + list_car[i].price + '\n'
+                    links += f'''<a href="{list_car[i].link}">{car_text}</a>'''
+                list_car=list_car[10:]
+                message_text = message_text + '\n' + links + '\n'+'''Щоб подивить більше: /more'''
 
-    except:
+        if not list_car:
+            message_text = f'''Нічого не знайдено! '''
+            message_text = message_text + "Варто ввести більш реалістичні дані"
+            message_text = message_text + "Почати ще раз: /set"
+
+    except Exception as e:
+        print("Помилка:", e)
         list_car=None
         message_text = f'''
         Щось пішло не так(((
@@ -367,7 +410,9 @@ async def searching(message: Message,state: FSMContext):
     await message.answer(
         text=message_text,
         reply_markup=ReplyKeyboardRemove(),
-        parse_mode="html"
+        parse_mode="html",
+        disable_web_page_preview=True
+
     )
 
     await state.update_data(searched_car_list=list_car)
@@ -382,48 +427,49 @@ async def more(message: Message,state: FSMContext):
     links = ""
     if len(list_car) <= 10:
         for i in list_car:
-            links += i.link + '\n' + '\n'
-        message_text += message_text + '\n' + links + '''\n '''
+            car_text = i.title + ' ' + i.price + '\n'
+            links += f'''<a href="{i.link}">{car_text}</a>'''
+        message_text = message_text + '\n' + links + '''\n '''
+        message_text = message_text + "Почати ще раз: /set"
     else:
         for i in range(0, 10):
-            links += list_car[i].link + '\n' + '\n'
+            car_text = list_car[i].title + ' ' + list_car[i].price + '\n'
+            links += f'''<a href="{list_car[i].link}">{car_text}</a>'''
         list_car = list_car[10:]
-        message_text += message_text + '\n' + links + '\n' + '''Щоб подивить більше: /more'''
+        message_text = message_text + '\n' + links + '\n' + '''Щоб подивить більше: /more'''
 
     await message.answer(
         text=message_text,
         reply_markup=ReplyKeyboardRemove(),
-        parse_mode="html"
+        parse_mode="html",
+        disable_web_page_preview=True
     )
     await state.update_data(searched_car_list=list_car)
     await state.set_state(UserState.searched_car_list)
 
+@router.message(Command(commands=["test1",'stop']))
+async def test(message: Message,state: FSMContext):
+    if message.text=='/test1':
+        await message.answer(text="Погнали тест 1")
+        char = car_obj.Car_Characteristics()
+        char.add_attr("Коробка", "Механіка")
+        char.add_attr("Двигун", "2")
+        char.add_attr("Кузов", "Седан")
+        char.add_attr("Колір", "Чорний")
+        char.add_attr("Пробіг", "300")
+        char.add_attr("Привід", "Передній")
+        car = car_obj.Car("Skoda", "", ["3000", "5000"], ["2000", "2010"], char, "Топ")
 
+        executor = ProcessPoolExecutor()
+        future = executor.submit(scrapy_parse_car.start_parse_car_site, car)
+        list_car = await asyncio.get_event_loop().run_in_executor(None, future.result)
 
+        text = ""
+        for car in list_car:
+            text += car.link + '\n'
 
-@router.message(Command("test1"))
-async def test(message: Message):
-    await message.answer(text="Погнали тест 1")
-
-    char = car_obj.Car_Characteristics()
-    char.add_attr("Коробка", "Механіка")
-    char.add_attr("Двигун", "2")
-    char.add_attr("Кузов", "Седан")
-    char.add_attr("Колір", "Чорний")
-    char.add_attr("Пробіг", "300")
-    char.add_attr("Привід", "Передній")
-    car = car_obj.Car("Skoda", "Octavia", ["3000", "5000"], ["2000", "2010"], char, "Топ")
-
-    executor = ProcessPoolExecutor()
-    future = executor.submit(scrapy_parse_car.start_parse_car_site, car)
-    list_car = await asyncio.get_event_loop().run_in_executor(None, future.result)
-
-    text = ""
-    for car in list_car:
-        text += car.link + '\n'
-
-    text+='\n'+str(len(list_car))
-    await message.answer(text=text)
+        text += '\n' + str(len(list_car))
+        await message.answer(text=text, disable_web_page_preview=True)
 
 @router.message(Command("test2"))
 async def test(message: Message):
@@ -448,4 +494,6 @@ async def test(message: Message):
 
 
     text+='\n'+str(len(list_car))
-    await message.answer(text=text)
+    await message.answer(text=text,disable_web_page_preview=True)
+
+

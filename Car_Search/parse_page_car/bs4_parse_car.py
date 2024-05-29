@@ -17,10 +17,10 @@ def extract_year(text):
 
 
 def automoto_parse_car_page(link)->car_obj.car_obj:
-    # ### unique extractor
+
     url = link
     response = requests.get(url)
-    print(response.status_code)
+
     res = BeautifulSoup(response.content, features="html.parser")
 
 
