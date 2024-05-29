@@ -506,4 +506,4 @@ def selenium_parse_dexpens(car:car_obj.Car):
 # car = car_obj.Car("Audi", "A4", ["3000", "5000"], ["2000", "2010"], char, "Топ")
 # car.characteristics.display_all_characteristics()
 #
-# print(selenium_parse_autoria(car))
+# print(selenium_parse_automoto(car))
