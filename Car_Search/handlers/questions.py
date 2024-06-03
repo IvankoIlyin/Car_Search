@@ -130,7 +130,7 @@ class UserState(StatesGroup):
     input_description=State()
     search_car = State()
     searched_car_list=State()
-    parse_runner=State()
+    curr_urls=State()
 
 @router.message(Command("start"))
 async def hello(message: Message):
@@ -376,7 +376,7 @@ async def searching(message: Message,state: FSMContext):
         car=data["search_car"]
         executor = ProcessPoolExecutor()
         future = executor.submit(scrapy_parse_car.start_parse_car_site, car)
-        list_car = await asyncio.get_event_loop().run_in_executor(None, future.result)
+        list_car,curr_urls = await asyncio.get_event_loop().run_in_executor(None, future.result)
         if list_car:
             links=f''''''
             message_text = f'''ЗНАЙШЛИ!!! '''
@@ -386,7 +386,8 @@ async def searching(message: Message,state: FSMContext):
                     car_text= i.title + ' ' + i.price + '\n'
                     links += f'''<a href="{i.link}">{car_text}</a>'''
                 message_text=message_text+ '\n'  + links + '''\n '''
-                message_text = message_text +"Почати ще раз: /set"
+                message_text = message_text + "Почати ще раз: /set"
+
             else:
                 for i in range(0,10):
                     car_text = list_car[i].title + ' ' + list_car[i].price + '\n'
@@ -399,9 +400,111 @@ async def searching(message: Message,state: FSMContext):
             message_text = message_text + "Варто ввести більш реалістичні дані"
             message_text = message_text + "Почати ще раз: /set"
 
+        print(curr_urls)
+
+        await state.update_data(searched_car_list=list_car)
+        await state.set_state(UserState.searched_car_list)
+        await state.update_data(curr_urls=curr_urls)
+        await state.set_state(UserState.curr_urls)
+
     except Exception as e:
         print("Помилка:", e)
         list_car=None
+        message_text = f'''
+        Щось пішло не так(((
+        Щоб почати щераз напишіть: /set
+        '''
+
+
+
+    await message.answer(
+        text=message_text,
+        reply_markup=ReplyKeyboardRemove(),
+        parse_mode="html",
+        disable_web_page_preview=True
+
+    )
+
+
+
+
+@router.message(Command("more"))
+async def more(message: Message,state: FSMContext):
+    data = await state.get_data()
+    list_car=data["searched_car_list"]
+    curr_urls = data["curr_urls"]
+    message_text = f'''Інші варіанти:'''
+    links = ""
+    if len(list_car) <= 10:
+        for i in list_car:
+            car_text = i.title + ' ' + i.price + '\n'
+            links += f'''<a href="{i.link}">{car_text}</a>'''
+        message_text = message_text + '\n' + links + '''\n '''
+        message_text = message_text + "Почати ще раз: /set"
+
+        if curr_urls[0] != '' or curr_urls[1] != '':
+            message_text = message_text + '\n' +"Продовжити пошук: /continue"
+    else:
+        for i in range(0, 10):
+            car_text = list_car[i].title + ' ' + list_car[i].price + '\n'
+            links += f'''<a href="{list_car[i].link}">{car_text}</a>'''
+        list_car = list_car[10:]
+        message_text = message_text + '\n' + links + '\n' + '''Щоб подивить більше: /more '''
+        message_text = message_text + '\n' + "Почати ще раз: /set"
+
+    await message.answer(
+        text=message_text,
+        reply_markup=ReplyKeyboardRemove(),
+        parse_mode="html",
+        disable_web_page_preview=True
+    )
+    await state.update_data(searched_car_list=list_car)
+    await state.set_state(UserState.searched_car_list)
+
+
+@router.message(Command("continue"))
+async def cont_searching(message: Message, state: FSMContext):
+    data = await state.get_data()
+    await message.answer(text="Шукаємо...")
+    try:
+
+        car = data["search_car"]
+        curr_urls=data["curr_urls"]
+        executor = ProcessPoolExecutor()
+        future = executor.submit(scrapy_parse_car.continue_parse_car_site, car,curr_urls)
+        list_car, curr_urls = await asyncio.get_event_loop().run_in_executor(None, future.result)
+        if list_car:
+            links = f''''''
+            message_text = f'''ЗНАЙШЛИ!!! '''
+
+            if len(list_car) <= 10:
+                for i in list_car:
+                    car_text = i.title + ' ' + i.price + '\n'
+                    links += f'''<a href="{i.link}">{car_text}</a>'''
+                message_text = message_text + '\n' + links + '''\n '''
+                message_text = message_text + "Почати ще раз: /set"
+
+            else:
+                for i in range(0, 10):
+                    car_text = list_car[i].title + ' ' + list_car[i].price + '\n'
+                    links += f'''<a href="{list_car[i].link}">{car_text}</a>'''
+                list_car = list_car[10:]
+                message_text = message_text + '\n' + links + '\n' + '''Щоб подивить більше: /more'''
+
+        if not list_car:
+            message_text = f'''Нічого не знайдено! '''
+            message_text = message_text + "Почати ще раз: /set"
+
+        print(curr_urls)
+
+        await state.update_data(searched_car_list=list_car)
+        await state.set_state(UserState.searched_car_list)
+        await state.update_data(curr_urls=curr_urls)
+        await state.set_state(UserState.curr_urls)
+
+    except Exception as e:
+        print("Помилка:", e)
+        list_car = None
         message_text = f'''
         Щось пішло не так(((
         Щоб почати щераз напишіть: /set
@@ -415,78 +518,28 @@ async def searching(message: Message,state: FSMContext):
 
     )
 
-    await state.update_data(searched_car_list=list_car)
-    await state.set_state(UserState.searched_car_list)
 
 
-@router.message(Command("more"),UserState.searched_car_list)
-async def more(message: Message,state: FSMContext):
-    data = await state.get_data()
-    list_car=data["searched_car_list"]
-    message_text = f'''Інші варіанти:'''
-    links = ""
-    if len(list_car) <= 10:
-        for i in list_car:
-            car_text = i.title + ' ' + i.price + '\n'
-            links += f'''<a href="{i.link}">{car_text}</a>'''
-        message_text = message_text + '\n' + links + '''\n '''
-        message_text = message_text + "Почати ще раз: /set"
-    else:
-        for i in range(0, 10):
-            car_text = list_car[i].title + ' ' + list_car[i].price + '\n'
-            links += f'''<a href="{list_car[i].link}">{car_text}</a>'''
-        list_car = list_car[10:]
-        message_text = message_text + '\n' + links + '\n' + '''Щоб подивить більше: /more'''
 
-    await message.answer(
-        text=message_text,
-        reply_markup=ReplyKeyboardRemove(),
-        parse_mode="html",
-        disable_web_page_preview=True
-    )
-    await state.update_data(searched_car_list=list_car)
-    await state.set_state(UserState.searched_car_list)
 
-@router.message(Command(commands=["test1",'stop']))
-async def test(message: Message,state: FSMContext):
-    if message.text=='/test1':
-        await message.answer(text="Погнали тест 1")
-        char = car_obj.Car_Characteristics()
-        char.add_attr("Коробка", "Механіка")
-        char.add_attr("Двигун", "2")
-        char.add_attr("Кузов", "Седан")
-        char.add_attr("Колір", "Чорний")
-        char.add_attr("Пробіг", "300")
-        char.add_attr("Привід", "Передній")
-        car = car_obj.Car("Skoda", "", ["3000", "5000"], ["2000", "2010"], char, "Топ")
 
-        executor = ProcessPoolExecutor()
-        future = executor.submit(scrapy_parse_car.start_parse_car_site, car)
-        list_car = await asyncio.get_event_loop().run_in_executor(None, future.result)
-
-        text = ""
-        for car in list_car:
-            text += car.link + '\n'
-
-        text += '\n' + str(len(list_car))
-        await message.answer(text=text, disable_web_page_preview=True)
 
 @router.message(Command("test2"))
 async def test(message: Message):
     await message.answer(text="Погнали тест 2")
 
     char = car_obj.Car_Characteristics()
-    char.add_attr("Коробка", "Механіка")
-    char.add_attr("Двигун", "2")
-    char.add_attr("Кузов", "Седан")
-    char.add_attr("Колір", "Чорний")
-    char.add_attr("Пробіг", "300")
-    char.add_attr("Привід", "Передній")
-    car = car_obj.Car("Audi", "A4", ["3000", "7000"], ["2000", "2010"], char, "Топ")
+    # char.add_attr("Коробка", "Механіка")
+    # char.add_attr("Двигун", "2")
+    # char.add_attr("Кузов", "Седан")
+    # char.add_attr("Колір", "Чорний")
+    # char.add_attr("Пробіг", "300")
+    # char.add_attr("Привід", "Передній")
+    car_ = car_obj.Car("Audi", "A4", ["3000", "7000"], ["2000", "2010"], char, "Топ")
 
     executor = ProcessPoolExecutor()
-    future = executor.submit(scrapy_parse_car.start_parse_car_site, car)
-    list_car = await asyncio.get_event_loop().run_in_executor(None, future.result)
+    future = executor.submit(scrapy_parse_car.start_parse_car_site, car_)
+    list_car, curr_link = await asyncio.get_event_loop().run_in_executor(None, future.result)
 
     text = ""
     for car in list_car:
@@ -495,5 +548,16 @@ async def test(message: Message):
 
     text+='\n'+str(len(list_car))
     await message.answer(text=text,disable_web_page_preview=True)
+
+    executor = ProcessPoolExecutor()
+    future = executor.submit(scrapy_parse_car.continue_parse_car_site, car_,curr_link)
+    list_car, curr_link = await asyncio.get_event_loop().run_in_executor(None, future.result)
+
+    text = ""
+    for car in list_car:
+        text += car.link + '\n'
+
+    text += '\n' + str(len(list_car))
+    await message.answer(text=text, disable_web_page_preview=True)
 
 

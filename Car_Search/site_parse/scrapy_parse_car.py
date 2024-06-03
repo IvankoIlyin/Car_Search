@@ -11,6 +11,10 @@ from selenium_parse import selenium_parse
 timeout = 60
 short_timeout = 20
 
+settings={
+        "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
+        "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
+    }
 
 
 #help method
@@ -82,7 +86,6 @@ def check_car_name(title, mark, model):
 def check_price(curr_car,search_car:car_obj.Car):
     if search_car.price[0] == '' and search_car.price[1] == '':
         return True
-
     if search_car.price[0]=='' and get_int_from_str(curr_car.price) <= get_int_from_str(search_car.price[1]):
         return True
     if search_car.price[1]=='' and get_int_from_str(curr_car.price) >= get_int_from_str(search_car.price[0]):
@@ -163,10 +166,13 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
     allowed_domains = ["automoto.ua"]
     not_allowed_keyword = ['/katalog','/book-new-auto','/newauto']
     search_list: car_obj.Search_List
-    start_url =None
-    start_urls = [start_url]
+    start_urls = []
     searched_car_list=[]
     links =[]
+    page_count=0
+    curr_page_link=[]
+
+
 
     def start_requests(self):
         for i in self.start_urls:
@@ -216,19 +222,24 @@ class Car_automoto_Parse_Spider(scrapy.Spider):
                 if response.css('ul.pagination li:last-child a'):
                         next_page = response.css('ul.pagination li:last-child a').attrib['href']
                         print(next_page)
-                        if 'http' in next_page:
-                            yield scrapy.Request(
-                                next_page,
-                                callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": timeout},
-                            )
-                        else:
-                            yield scrapy.Request(
-                                "https://automoto.ua" + next_page,
-                                callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": timeout},
-                            )
-
+                        self.curr_page_link.append("https://automoto.ua" + next_page)
+                        if self.page_count<=3:
+                            if 'http' in next_page:
+                                yield scrapy.Request(
+                                    next_page,
+                                    callback=self.parse,
+                                    meta={"dont_retry": True, "download_timeout": timeout},
+                                )
+                            else:
+                                yield scrapy.Request(
+                                    "https://automoto.ua" + next_page,
+                                    callback=self.parse,
+                                    meta={"dont_retry": True, "download_timeout": timeout},
+                                )
+                            self.page_count+=1
+                            self.curr_page_link.clear()
+                if not response.css('ul.pagination li:last-child a'):
+                    self.curr_page_link.clear()
 
     def get_info(self,response):
          curr_car = bs4_parse_car.automoto_parse_car_page(response.url)
@@ -243,6 +254,8 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
     search_list: car_obj.Search_List
     searched_car_list = []
     links =[]
+    page_count = 0
+    curr_page_link = []
 
 
     def start_requests(self):
@@ -296,22 +309,29 @@ class Car_autoria_Parse_Spider(scrapy.Spider):
                 if response.css('.page-link.js-next'):
                         next_page = response.css('.page-link.js-next').attrib['href']
                         print(next_page)
-                        if 'http' in next_page:
-                            yield scrapy.Request(
-                                next_page,
-                                callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": timeout}
-                            )
-                        else:
-                            yield scrapy.Request(
-                                "https://auto.ria.com" + next_page,
-                                callback=self.parse,
-                                meta={"dont_retry": True, "download_timeout": timeout}
-                            )
+                        print(self.page_count)
+                        self.curr_page_link.append("https://auto.ria.com" + next_page)
+                        if self.page_count <= 3:
+                            if 'http' in next_page:
+                                yield scrapy.Request(
+                                    next_page,
+                                    callback=self.parse,
+                                    meta={"dont_retry": True, "download_timeout": timeout}
+                                )
+                            else:
+                                yield scrapy.Request(
+                                    "https://auto.ria.com" + next_page,
+                                    callback=self.parse,
+                                    meta={"dont_retry": True, "download_timeout": timeout}
+                                )
+                            self.page_count += 1
+                            self.curr_page_link.clear()
+
+                if not response.css('.page-link.js-next'):
+                    self.curr_page_link.clear()
 
 
     def get_info(self,response):
-        print(response)
         curr_car = bs4_parse_car.autoria_parse_car_page(response.url)
         add_to_car_list(curr_car,self.search_list,self.searched_car_list)
 
@@ -396,10 +416,7 @@ class Car_dexpens_Parse_Spider(scrapy.Spider):
 
 #Run_All
 def start_parse_car_site(search_list):
-    process = CrawlerProcess(settings={
-        "REQUEST_FINGERPRINTER_IMPLEMENTATION": "2.7",
-        "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
-    })
+    process = CrawlerProcess(settings=settings)
 
     start_url_automoto = selenium_parse.selenium_parse_automoto(search_list)
     Car_automoto_Parse_Spider.start_urls = [start_url_automoto]
@@ -414,33 +431,96 @@ def start_parse_car_site(search_list):
     process.crawl(Car_autoria_Parse_Spider)
     process.crawl(Car_automoto_Parse_Spider)
     process.start()
+
+
+
     list=Car_automoto_Parse_Spider.searched_car_list+Car_autoria_Parse_Spider.searched_car_list
+
     list=sort_list_by_description(list,search_list)
 
-    return list
 
-#
+    curr_url_automoto = Car_automoto_Parse_Spider.curr_page_link
+    try:
+        curr_url_automoto=curr_url_automoto[0]
+    except:
+        curr_url_automoto=''
+
+    curr_url_autoria = Car_autoria_Parse_Spider.curr_page_link
+    try:
+        curr_url_autoria = curr_url_autoria[0]
+    except:
+        curr_url_autoria = ''
+
+    process.stop()
+    return list, [curr_url_automoto,curr_url_autoria]
+
+def continue_parse_car_site(search_list,curr_start_url):
+    process = CrawlerProcess(settings=settings)
+
+    if curr_start_url[0]!='':
+        Car_automoto_Parse_Spider.start_urls = [curr_start_url[0]]
+        Car_automoto_Parse_Spider.search_list = search_list
+        process.crawl(Car_automoto_Parse_Spider)
+
+    if curr_start_url[1] != '':
+        Car_autoria_Parse_Spider.start_urls = [curr_start_url[1]]
+        Car_autoria_Parse_Spider.search_list = search_list
+        process.crawl(Car_autoria_Parse_Spider)
+
+
+
+    process.start()
+
+    list=Car_automoto_Parse_Spider.searched_car_list+Car_autoria_Parse_Spider.searched_car_list
+    list = sort_list_by_description(list, search_list)
+    curr_url = Car_automoto_Parse_Spider.curr_page_link
+
+    curr_url_automoto = Car_automoto_Parse_Spider.curr_page_link
+    try:
+        curr_url_automoto = curr_url_automoto[0]
+    except:
+        curr_url_automoto = ''
+
+    curr_url_autoria = Car_autoria_Parse_Spider.curr_page_link
+    try:
+        curr_url_autoria = curr_url_autoria[0]
+    except:
+        curr_url_autoria = ''
+
+
+    process.stop()
+
+    return list, [curr_url_automoto,curr_url_autoria]
+
+
+
 # char=car_obj.Car_Characteristics()
-# char.add_attr("Коробка","Механіка")
-# char.add_attr("Коробка","Автомат")
-# char.add_attr("Паливо","Бензин")
-# char.add_attr("Паливо","Дизель")
-# char.add_attr("Двигун","2")
-# char.add_attr("Кузов","Седан")
-# char.add_attr("Пробіг","300")
-# char.add_attr("Привід","Передній")
+# # char.add_attr("Коробка","Механіка")
+# # char.add_attr("Коробка","Автомат")
+# # char.add_attr("Паливо","Бензин")
+# # char.add_attr("Паливо","Дизель")
+# # char.add_attr("Двигун","2")
+# # char.add_attr("Кузов","Седан")
+# # char.add_attr("Пробіг","300")
+# # char.add_attr("Привід","Передній")
 #
-# car=car_obj.Car("Skoda","Octavia",["3000","5000"],["2000","2010"],char,"Топ")
+# car=car_obj.Car("Audi","A4",["3000","7000"],["2000","2010"],char,"Топ")
 #
-# char.display_all_characteristics()
-#
-# searched_car_list=start_parse_car_site(car)
+# #char.display_all_characteristics()
 #
 #
-# for i in searched_car_list:
+#
+# car_list, first_link = start_parse_car_site(car)
+#
+# for i in car_list:
 #     print(i.link)
 #
-
-
-
-
+# print(first_link)
+#
+# car_list, second_link = continue_parse_car_site(car,first_link)
+#
+#
+# for i in car_list:
+#     print(i.link)
+#
+# print(second_link)
