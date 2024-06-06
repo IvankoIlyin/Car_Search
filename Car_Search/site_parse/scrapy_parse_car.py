@@ -1,6 +1,8 @@
+import asyncio
 
 import scrapy
 from scrapy.crawler import CrawlerProcess
+from concurrent.futures import ProcessPoolExecutor
 
 import difflib
 from car_obj import car_obj
@@ -435,7 +437,7 @@ def start_parse_car_site(search_list):
 
 
     list=Car_automoto_Parse_Spider.searched_car_list+Car_autoria_Parse_Spider.searched_car_list
-
+    # list = Car_automoto_Parse_Spider.searched_car_list
     list=sort_list_by_description(list,search_list)
 
 
@@ -473,7 +475,7 @@ def continue_parse_car_site(search_list,curr_start_url):
 
     list=Car_automoto_Parse_Spider.searched_car_list+Car_autoria_Parse_Spider.searched_car_list
     list = sort_list_by_description(list, search_list)
-    curr_url = Car_automoto_Parse_Spider.curr_page_link
+
 
     curr_url_automoto = Car_automoto_Parse_Spider.curr_page_link
     try:
@@ -505,22 +507,9 @@ def continue_parse_car_site(search_list,curr_start_url):
 # # char.add_attr("Привід","Передній")
 #
 # car=car_obj.Car("Audi","A4",["3000","7000"],["2000","2010"],char,"Топ")
-#
-# #char.display_all_characteristics()
-#
-#
-#
-# car_list, first_link = start_parse_car_site(car)
-#
-# for i in car_list:
-#     print(i.link)
-#
-# print(first_link)
-#
-# car_list, second_link = continue_parse_car_site(car,first_link)
-#
-#
-# for i in car_list:
-#     print(i.link)
-#
-# print(second_link)
+
+#char.display_all_characteristics()
+
+
+
+

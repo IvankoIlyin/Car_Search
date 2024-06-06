@@ -387,8 +387,10 @@ async def searching(message: Message,state: FSMContext):
                     links += f'''<a href="{i.link}">{car_text}</a>'''
                 message_text=message_text+ '\n'  + links + '''\n '''
                 message_text = message_text + "Почати ще раз: /set"
+                if (curr_urls[0] != '' or curr_urls[1] != ''):
+                    message_text = message_text + '\n' + "Продовжити пошук: /continue"
 
-            else:
+            if len(list_car) > 10:
                 for i in range(0,10):
                     car_text = list_car[i].title + ' ' + list_car[i].price + '\n'
                     links += f'''<a href="{list_car[i].link}">{car_text}</a>'''
@@ -396,8 +398,8 @@ async def searching(message: Message,state: FSMContext):
                 message_text = message_text + '\n' + links + '\n'+'''Щоб подивить більше: /more'''
 
         if not list_car:
-            message_text = f'''Нічого не знайдено! '''
-            message_text = message_text + "Варто ввести більш реалістичні дані"
+            message_text = f'''Нічого не знайдено! '''+ '\n'
+            message_text = message_text + "Варто ввести більш реалістичні дані "+ '\n'
             message_text = message_text + "Почати ще раз: /set"
 
         print(curr_urls)
@@ -529,13 +531,13 @@ async def test(message: Message):
     await message.answer(text="Погнали тест 2")
 
     char = car_obj.Car_Characteristics()
-    # char.add_attr("Коробка", "Механіка")
-    # char.add_attr("Двигун", "2")
-    # char.add_attr("Кузов", "Седан")
-    # char.add_attr("Колір", "Чорний")
-    # char.add_attr("Пробіг", "300")
-    # char.add_attr("Привід", "Передній")
-    car_ = car_obj.Car("Audi", "A4", ["3000", "7000"], ["2000", "2010"], char, "Топ")
+    char.add_attr("Коробка", "Механіка")
+    char.add_attr("Двигун", "2")
+    char.add_attr("Кузов", "Седан")
+    char.add_attr("Колір", "Чорний")
+    char.add_attr("Пробіг", "300")
+    char.add_attr("Привід", "Передній")
+    car_ = car_obj.Car("Audi", "A4", ["3000", "5000"], ["2000", "2010"], char, "Топ")
 
     executor = ProcessPoolExecutor()
     future = executor.submit(scrapy_parse_car.start_parse_car_site, car_)
