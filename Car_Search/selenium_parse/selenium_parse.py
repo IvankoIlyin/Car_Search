@@ -491,19 +491,19 @@ def selenium_parse_dexpens(car:car_obj.Car):
 
     return link
 
-#
-# char = car_obj.Car_Characteristics()
-# char.add_attr("Коробка", "Механіка")
-# char.add_attr("Двигун", "2")
-# char.add_attr("Кузов", "Седан")
-# char.add_attr("Кузов", "Купе")
-# char.add_attr("Колір", "Чорний")
-# char.add_attr("Колір", "Білий")
-# char.add_attr("Пробіг", "300")
-# char.add_attr("Привід", "Передній")
-# char.add_attr("Привід", "Задній")
-# char.add_attr("Привід", "Ланцюг")
-# car = car_obj.Car("Audi", "A4", ["3000", "5000"], ["2000", "2010"], char, "Топ")
-# car.characteristics.display_all_characteristics()
-#
-# print(selenium_parse_automoto(car))
+
+char = car_obj.Car_Characteristics()
+char.add_attr("Коробка", "Механіка")
+char.add_attr("Двигун", "2")
+char.add_attr("Кузов", "Седан")
+char.add_attr("Кузов", "Купе")
+char.add_attr("Колір", "Чорний")
+char.add_attr("Колір", "Білий")
+char.add_attr("Пробіг", "300")
+char.add_attr("Привід", "Передній")
+char.add_attr("Привід", "Задній")
+char.add_attr("Привід", "Ланцюг")
+car = car_obj.Car("Audi", "A4", ["3000", "5000"], ["2000", "2010"], char, "Топ")
+car.characteristics.display_all_characteristics()
+
+print(selenium_parse_automoto(car))
