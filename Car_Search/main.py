@@ -10,7 +10,7 @@ from handlers import questions
 
 
 async def main():
-    bot = Bot(token="6522837095:AAGpGmy2TBwrXadFC-lApyqFkgUcS3SFOV0")
+    bot = Bot(token="TOKEN")
     dp = Dispatcher()
 
     dp.include_router(questions.router)
